@@ -1,0 +1,15 @@
+# Variáveis de ambiente locais (contêm a senha do banco)
+.env
+
+# IDE
+.idea/
+
+# Binário gerado por go build
+/go-lang
+
+# Testes e cobertura
+*.test
+*.out
+
+# macOS
+.DS_Store

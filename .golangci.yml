@@ -1,0 +1,34 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # standard: errcheck, govet, ineffassign, staticcheck e unused.
+  default: standard
+  enable:
+    - errorlint # exige errors.Is/errors.As em vez de comparar erros com ==
+    - misspell  # erros de digitação em comentários e strings
+    - revive    # convenções de nomes, comentários e fluxo de erros
+    - unconvert # conversões de tipo desnecessárias
+  settings:
+    revive:
+      rules:
+        - name: blank-imports      # import com _ precisa de comentário
+        - name: error-naming       # erros exportados começam com Err
+        - name: error-strings      # mensagens de erro em minúsculo, sem pontuação final
+        - name: exported           # identificadores exportados precisam de comentário
+        - name: indent-error-flow  # sem else depois de return
+        - name: receiver-naming    # mesmo nome de receiver em todos os métodos
+        - name: unused-parameter   # parâmetros não usados viram _
+        - name: var-naming         # ID, URL, JSON etc. em maiúsculo
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      # Ordem dos imports: stdlib, terceiros e, por último, o próprio projeto.
+      local-prefixes:
+        - go-lang

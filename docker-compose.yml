@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: go-lang-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    image: golang:1.27-alpine
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./migrations:/app/migrations
+      - gomodcache:/go/pkg/mod
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: host=db port=5432 user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} sslmode=disable
+      GOOSE_MIGRATION_DIR: /app/migrations
+    entrypoint: ["go", "run", "github.com/pressly/goose/v3/cmd/goose@latest"]
+
+volumes:
+  pgdata:
+  gomodcache:
