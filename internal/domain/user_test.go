@@ -88,8 +88,33 @@ func TestUserValidateRequiresAllFields(t *testing.T) {
 	}
 }
 
+func TestUserValidateNameLength(t *testing.T) {
+	tests := []struct {
+		name     string
+		userName string
+		want     error
+	}{
+		{"100 caracteres", strings.Repeat("a", 100), nil},
+		{"101 caracteres", strings.Repeat("a", 101), domain.ErrUserNameTooLong},
+		// 100 caracteres acentuados ocupam 200 bytes: só passa se o limite contar caracteres.
+		{"100 caracteres acentuados", strings.Repeat("é", 100), nil},
+		{"101 caracteres acentuados", strings.Repeat("é", 101), domain.ErrUserNameTooLong},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			user := domain.User{Name: test.userName, Email: "ana@example.com", Password: "Senha-longa-1"}
+			if err := user.Validate(); !errors.Is(err, test.want) {
+				t.Errorf("Validate() = %v, want %v", err, test.want)
+			}
+		})
+	}
+}
+
 func TestUserPatchValidate(t *testing.T) {
 	empty, name, badEmail, weak := "", "Ana", "nao-e-email", "fraca"
+	maxName, longName := strings.Repeat("a", 100), strings.Repeat("a", 101)
+	accentedMaxName := strings.Repeat("é", 100)
 
 	tests := []struct {
 		name  string
@@ -101,6 +126,9 @@ func TestUserPatchValidate(t *testing.T) {
 		{"só o nome", domain.UserPatch{Name: &name}, nil},
 		{"e-mail inválido", domain.UserPatch{Email: &badEmail}, domain.ErrInvalidEmail},
 		{"senha fraca", domain.UserPatch{Password: &weak}, domain.ErrWeakPassword},
+		{"nome com 100 caracteres", domain.UserPatch{Name: &maxName}, nil},
+		{"nome com 101 caracteres", domain.UserPatch{Name: &longName}, domain.ErrUserNameTooLong},
+		{"nome com 100 caracteres acentuados", domain.UserPatch{Name: &accentedMaxName}, nil},
 	}
 
 	for _, test := range tests {

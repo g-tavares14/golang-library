@@ -57,6 +57,36 @@ func TestCreateUserStoresHashAndHidesPassword(t *testing.T) {
 	}
 }
 
+func TestCreateUserNameLength(t *testing.T) {
+	tests := []struct {
+		name      string
+		userName  string
+		want      int
+		wantError string
+	}{
+		{"100 caracteres", strings.Repeat("a", 100), http.StatusCreated, ""},
+		{"101 caracteres", strings.Repeat("a", 101), http.StatusBadRequest, "user name is too long"},
+		// 100 caracteres acentuados ocupam 200 bytes: o limite conta caracteres, como a coluna do banco.
+		{"100 caracteres acentuados", strings.Repeat("é", 100), http.StatusCreated, ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			app := newTestApp(t)
+
+			body := `{"name":"` + test.userName + `","email":"ana@example.com","password":"Senha-longa-1"}`
+			recorder := app.do("POST", "/users", "", body)
+			assertStatus(t, recorder, test.want)
+
+			if test.wantError != "" {
+				if got := decode(t, recorder)["error"]; got != test.wantError {
+					t.Errorf("error = %v, want %q", got, test.wantError)
+				}
+			}
+		})
+	}
+}
+
 func TestCreateUserErrors(t *testing.T) {
 	tests := []struct {
 		name string

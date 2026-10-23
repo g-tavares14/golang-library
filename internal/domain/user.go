@@ -3,6 +3,7 @@ package domain
 import (
 	"net/mail"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -10,6 +11,8 @@ const (
 	maxEmailLength = 100
 	// minPasswordLength é o tamanho mínimo aceito para uma senha, em bytes.
 	minPasswordLength = 8
+	// maxUserNameLength é o tamanho máximo aceito para o nome do usuário, em caracteres UTF-8.
+	maxUserNameLength = 100
 )
 
 // User é uma pessoa que usa a API.
@@ -68,6 +71,10 @@ func (user *User) Validate() error {
 		return ErrUserFieldsEmpty
 	}
 
+	if utf8.RuneCountInString(user.Name) > maxUserNameLength {
+		return ErrUserNameTooLong
+	}
+
 	if err := ValidateEmail(user.Email); err != nil {
 		return err
 	}
@@ -85,6 +92,10 @@ func (patch UserPatch) Validate() error {
 		(patch.Email != nil && *patch.Email == "") ||
 		(patch.Password != nil && *patch.Password == "") {
 		return ErrUserFieldsEmpty
+	}
+
+	if patch.Name != nil && utf8.RuneCountInString(*patch.Name) > maxUserNameLength {
+		return ErrUserNameTooLong
 	}
 
 	if patch.Email != nil {

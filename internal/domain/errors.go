@@ -39,4 +39,7 @@ var (
 	// ErrInvalidCredentials é devolvido quando o e-mail ou a senha do login não conferem.
 	// A mesma mensagem vale para os dois casos, para não revelar quais e-mails existem.
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	// ErrUserNameTooLong é devolvido quando o nome do usuário é muito longo.
+	// O limite é definido pela coluna de nome do usuário no banco de dados (VARCHAR 100).
+	ErrUserNameTooLong = errors.New("user name is too long")
 )
