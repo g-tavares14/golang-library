@@ -22,7 +22,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 - [x] **Testes.** Não existe nenhum `*_test.go`. Feito: handlers com `httptest` e `auth` rodam sempre; os testes de `repository` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
 - [x] **README** com: subir o banco (`docker compose up -d db`), rodar migrations (`docker compose run --rm migrate up`), copiar o `.env.example`, rodar (`go run .`) e a lista de endpoints.
-- [ ] **CI no GitHub Actions** rodando `go build ./...`, `golangci-lint fmt --diff ./...` e `golangci-lint run ./...` a cada push.
+- [x] **CI no GitHub Actions** rodando `go build ./...`, `golangci-lint fmt --diff ./...` e `golangci-lint run ./...` a cada push.
 - [x] **Arquivo `.http`** no repositório documentando as rotas (criar, listar, atualizar, apagar) para testar pelo GoLand.
 - [ ] **Colocar `~/go/bin` no `PATH`** do terminal, para o comando `golangci-lint` funcionar sem o caminho completo (hoje ele está em `/Users/gtavares/go/bin/golangci-lint`).
 - [ ] **GoLand:** se o aviso `Unable to resolve table 'users'` aparecer no `.sql`, fazer **Refresh** na janela Database (o cache do IDE ficou antes da migration 3).
