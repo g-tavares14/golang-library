@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"slices"
 
 	"go-lang/auth"
 	"go-lang/repository"
@@ -16,8 +15,6 @@ const (
 	roleUser  = "user"
 	roleAdmin = "admin"
 )
-
-var allowedRoles = []string{roleUser, roleAdmin}
 
 // UserHandler atende as rotas HTTP de usuários.
 type UserHandler struct {
@@ -54,13 +51,8 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	if user.Role == "" {
-		user.Role = roleUser
-	}
-	if !slices.Contains(allowedRoles, user.Role) {
-		writeError(responseWriter, http.StatusBadRequest, "invalid role")
-		return
-	}
+	// O cadastro é público: o papel é decidido pelo servidor, nunca pelo cliente.
+	user.Role = roleUser
 
 	passwordHash, err := auth.HashPassword(user.Password)
 	if err != nil {

@@ -5,7 +5,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 ## 🔴 1. Segurança (a refatoração que ficou para depois)
 
 - [ ] **Autenticação e autorização.** Hoje o `PUT /users/{id}` decide "é admin?" pelo `role` que vem no **corpo** da requisição ([handlers/user.go](handlers/user.go), `Update`). Qualquer pessoa passa mandando `"role": "admin"`. Precisa de login (por exemplo JWT) e um middleware que leia o papel do token, e não do JSON.
-- [ ] **Papel decidido pelo servidor no cadastro.** `POST /users` aceita `"role": "admin"` de qualquer cliente (mass assignment). No cadastro público, force `user` e crie uma rota protegida para promover a admin.
+- [x] **Papel decidido pelo servidor no cadastro.** `POST /users` aceita `"role": "admin"` de qualquer cliente (mass assignment). No cadastro público, force `user` e crie uma rota protegida para promover a admin.
 - [x] **Hash da senha.** `Create` e `Update` gravam a senha em texto puro. Usar `golang.org/x/crypto/bcrypt` antes de salvar (a coluna `password` é `VARCHAR(255)`, cabe o hash).
 - [x] **Não devolver `password` no JSON.** `Create` e `Update` respondem com `"password": "..."`. Criar uma struct de resposta (`UserResponse` sem a senha) e, de preferência, uma struct de entrada separada.
 - [ ] **Validar o formato do e-mail** e exigir uma senha mínima (hoje só checa se está vazio).
