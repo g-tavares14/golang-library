@@ -96,7 +96,7 @@ func (userRepository *UserRepository) List() ([]models.User, error) {
 		}
 	}()
 
-	var users []models.User
+	users := []models.User{}
 	for rows.Next() {
 		var user models.User
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role); err != nil {

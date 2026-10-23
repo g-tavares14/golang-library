@@ -86,7 +86,7 @@ func (userHandler *UserHandler) List(responseWriter http.ResponseWriter, _ *http
 		return
 	}
 
-	var responses []userResponse
+	responses := make([]userResponse, 0, len(users))
 	for i := range users {
 		responses = append(responses, newUserResponse(&users[i]))
 	}

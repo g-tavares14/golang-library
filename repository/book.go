@@ -62,7 +62,7 @@ func (bookRepository *BookRepository) List() ([]models.Book, error) {
 		}
 	}()
 
-	var books []models.Book
+	books := []models.Book{}
 	for rows.Next() {
 		var book models.Book
 		if err := rows.Scan(&book.ID, &book.Title, &book.Description, &book.Author, &book.CreatedAt); err != nil {

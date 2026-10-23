@@ -12,7 +12,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 ## 🟡 2. API e código
 
-- [ ] **Decidir `null` ou `[]`** nos `List` de livros e usuários. Hoje devolvem `null` quando vazios (escolha atual). Para `[]`, usar `books := []models.Book{}` e `users := []models.User{}`.
+- [x] **Decidir `null` ou `[]`** nos `List` de livros e usuários. Decidido: devolvem `[]` quando vazios.
 - [ ] **`PUT` de usuário exige `password`.** Para só trocar o nome, o cliente precisa reenviar a senha. Avaliar `PATCH` ou tornar a senha opcional.
 - [x] **Encerramento do servidor.** O `defer database.Close()` do [main.go](main.go) nunca roda, porque o `log.Fatal` final chama `os.Exit`. Usar `http.Server` com `Shutdown` e sinal de parada.
 - [ ] **Reduzir duplicação (opcional).** Ideias que não foram aplicadas: `decodeJSON[T]` nos handlers, `EmptyIfNil[T]` nos `List`, ou um `Repository[T]` genérico. Só vale a pena com mais tabelas.
