@@ -1,3 +1,6 @@
+# O nome fixo mantém o projeto "go-lang" (e o volume go-lang_pgdata) mesmo com o arquivo em deployment/.
+name: go-lang
+
 services:
   db:
     image: postgres:17-alpine
@@ -25,7 +28,7 @@ services:
         condition: service_healthy
     working_dir: /app
     volumes:
-      - ./migrations:/app/migrations
+      - ../migrations:/app/migrations
       - gomodcache:/go/pkg/mod
     environment:
       GOOSE_DRIVER: postgres

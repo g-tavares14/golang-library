@@ -10,11 +10,11 @@ Pré-requisitos: Go 1.27+ e Docker.
 # 1. Variáveis de ambiente (edite JWT_SECRET, ADMIN_PASSWORD e DB_PASSWORD)
 cp .env.example .env
 
-# 2. Banco de dados
-docker compose up -d db
+# 2. Banco de dados (o Compose fica em deployment/ e lê o .env da raiz)
+docker compose -f deployment/docker-compose.yml --env-file .env up -d db
 
 # 3. Migrations
-docker compose run --rm migrate up
+docker compose -f deployment/docker-compose.yml --env-file .env run --rm migrate up
 
 # 4. Servidor em http://localhost:8080
 go run .
