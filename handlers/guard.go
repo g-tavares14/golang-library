@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"go-lang/auth"
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/security"
 )
 
 // claimsContextKey é a chave sob a qual o Guard guarda os dados do token no contexto da requisição.
@@ -14,11 +14,11 @@ type claimsContextKey struct{}
 
 // Guard protege rotas exigindo um token JWT válido no cabeçalho Authorization.
 type Guard struct {
-	tokenManager *auth.TokenManager
+	tokenManager *security.TokenManager
 }
 
 // NewGuard cria um Guard que valida tokens com tokenManager.
-func NewGuard(tokenManager *auth.TokenManager) *Guard {
+func NewGuard(tokenManager *security.TokenManager) *Guard {
 	return &Guard{tokenManager: tokenManager}
 }
 
@@ -52,22 +52,22 @@ func (guard *Guard) RequireAdmin(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // authenticate lê o token Bearer da requisição e devolve os dados dele.
-func (guard *Guard) authenticate(request *http.Request) (auth.Claims, bool) {
+func (guard *Guard) authenticate(request *http.Request) (security.Claims, bool) {
 	scheme, token, found := strings.Cut(request.Header.Get("Authorization"), " ")
 	if !found || !strings.EqualFold(scheme, "Bearer") {
-		return auth.Claims{}, false
+		return security.Claims{}, false
 	}
 
 	claims, err := guard.tokenManager.Parse(strings.TrimSpace(token))
 	if err != nil {
-		return auth.Claims{}, false
+		return security.Claims{}, false
 	}
 
 	return claims, true
 }
 
 // claimsFromContext devolve os dados do token guardados pelo Guard.
-func claimsFromContext(ctx context.Context) (auth.Claims, bool) {
-	claims, ok := ctx.Value(claimsContextKey{}).(auth.Claims)
+func claimsFromContext(ctx context.Context) (security.Claims, bool) {
+	claims, ok := ctx.Value(claimsContextKey{}).(security.Claims)
 	return claims, ok
 }

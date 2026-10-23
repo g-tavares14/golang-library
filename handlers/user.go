@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"go-lang/auth"
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/security"
 )
 
 // UserStore é o acesso a usuários de que o UserHandler precisa. O *postgres.UserRepository a satisfaz.
@@ -66,9 +66,9 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 	// O cadastro é público: o papel é decidido pelo servidor, nunca pelo cliente.
 	user.Role = domain.RoleUser
 
-	passwordHash, err := auth.HashPassword(user.Password)
+	passwordHash, err := security.HashPassword(user.Password)
 	if err != nil {
-		if errors.Is(err, auth.ErrPasswordTooLong) {
+		if errors.Is(err, security.ErrPasswordTooLong) {
 			writeError(responseWriter, http.StatusBadRequest, "password is too long")
 			return
 		}
@@ -133,9 +133,9 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 
 	user.ID = request.PathValue("id")
 
-	passwordHash, err := auth.HashPassword(user.Password)
+	passwordHash, err := security.HashPassword(user.Password)
 	if err != nil {
-		if errors.Is(err, auth.ErrPasswordTooLong) {
+		if errors.Is(err, security.ErrPasswordTooLong) {
 			writeError(responseWriter, http.StatusBadRequest, "password is too long")
 			return
 		}
@@ -204,9 +204,9 @@ func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, reques
 			return
 		}
 
-		passwordHash, err := auth.HashPassword(*patch.Password)
+		passwordHash, err := security.HashPassword(*patch.Password)
 		if err != nil {
-			if errors.Is(err, auth.ErrPasswordTooLong) {
+			if errors.Is(err, security.ErrPasswordTooLong) {
 				writeError(responseWriter, http.StatusBadRequest, "password is too long")
 				return
 			}

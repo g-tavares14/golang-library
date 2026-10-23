@@ -1,15 +1,15 @@
-package auth_test
+package security_test
 
 import (
 	"errors"
 	"strings"
 	"testing"
 
-	"go-lang/auth"
+	"go-lang/internal/infrastructure/security"
 )
 
 func TestHashPasswordAndCheckPassword(t *testing.T) {
-	hash, err := auth.HashPassword("s3nha-forte")
+	hash, err := security.HashPassword("s3nha-forte")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
@@ -18,22 +18,22 @@ func TestHashPasswordAndCheckPassword(t *testing.T) {
 		t.Fatal("HashPassword() devolveu a senha em texto puro")
 	}
 
-	if !auth.CheckPassword(hash, "s3nha-forte") {
+	if !security.CheckPassword(hash, "s3nha-forte") {
 		t.Error("CheckPassword() rejeitou a senha correta")
 	}
 
-	if auth.CheckPassword(hash, "outra-senha") {
+	if security.CheckPassword(hash, "outra-senha") {
 		t.Error("CheckPassword() aceitou uma senha errada")
 	}
 }
 
 func TestHashPasswordUsesRandomSalt(t *testing.T) {
-	first, err := auth.HashPassword("mesma-senha")
+	first, err := security.HashPassword("mesma-senha")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
 
-	second, err := auth.HashPassword("mesma-senha")
+	second, err := security.HashPassword("mesma-senha")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
@@ -44,14 +44,14 @@ func TestHashPasswordUsesRandomSalt(t *testing.T) {
 }
 
 func TestHashPasswordTooLong(t *testing.T) {
-	_, err := auth.HashPassword(strings.Repeat("a", 73))
-	if !errors.Is(err, auth.ErrPasswordTooLong) {
+	_, err := security.HashPassword(strings.Repeat("a", 73))
+	if !errors.Is(err, security.ErrPasswordTooLong) {
 		t.Errorf("HashPassword() error = %v, want ErrPasswordTooLong", err)
 	}
 }
 
 func TestCheckPasswordInvalidHash(t *testing.T) {
-	if auth.CheckPassword("isto-nao-e-um-hash", "qualquer") {
+	if security.CheckPassword("isto-nao-e-um-hash", "qualquer") {
 		t.Error("CheckPassword() aceitou um hash inválido")
 	}
 }

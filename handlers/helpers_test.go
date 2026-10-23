@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"go-lang/auth"
 	"go-lang/handlers"
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/security"
 )
 
 var testSecret = []byte("0123456789012345678901234567890123456789")
@@ -176,7 +176,7 @@ type testApp struct {
 	mux          *http.ServeMux
 	users        *fakeUserStore
 	books        *fakeBookStore
-	tokenManager *auth.TokenManager
+	tokenManager *security.TokenManager
 	adminID      string
 	memberID     string // usuário comum
 	adminToken   string
@@ -191,10 +191,10 @@ func newTestApp(t *testing.T) *testApp {
 		mux:          http.NewServeMux(),
 		users:        newFakeUserStore(),
 		books:        newFakeBookStore(),
-		tokenManager: auth.NewTokenManager(testSecret, time.Hour),
+		tokenManager: security.NewTokenManager(testSecret, time.Hour),
 	}
 
-	passwordHash, err := auth.HashPassword("senha-do-teste")
+	passwordHash, err := security.HashPassword("senha-do-teste")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}

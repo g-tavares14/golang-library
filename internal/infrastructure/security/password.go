@@ -1,5 +1,5 @@
-// Package auth reúne o hash de senhas, a emissão de tokens e a verificação de papéis.
-package auth
+// Package security reúne o hash de senhas, a emissão de tokens e a verificação de papéis.
+package security
 
 import "golang.org/x/crypto/bcrypt"
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"go-lang/auth"
+	"go-lang/internal/infrastructure/security"
 )
 
 func TestRoutePermissions(t *testing.T) {
@@ -63,7 +63,7 @@ func TestRoutePermissions(t *testing.T) {
 func TestGuardRejectsBadTokens(t *testing.T) {
 	app := newTestApp(t)
 
-	expired, err := auth.NewTokenManager(testSecret, -time.Minute).Issue(app.adminID, "admin")
+	expired, err := security.NewTokenManager(testSecret, -time.Minute).Issue(app.adminID, "admin")
 	if err != nil {
 		t.Fatalf("Issue() error = %v", err)
 	}

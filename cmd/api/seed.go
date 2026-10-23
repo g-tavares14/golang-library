@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"go-lang/auth"
 	"go-lang/internal/domain"
 	"go-lang/internal/infrastructure/postgres"
+	"go-lang/internal/infrastructure/security"
 )
 
 // seedAdmin cria o admin inicial a partir de ADMIN_EMAIL e ADMIN_PASSWORD.
@@ -25,7 +25,7 @@ func seedAdmin(userRepository *postgres.UserRepository) error {
 		return errors.New("ADMIN_PASSWORD is required when ADMIN_EMAIL is set")
 	}
 
-	passwordHash, err := auth.HashPassword(password)
+	passwordHash, err := security.HashPassword(password)
 	if err != nil {
 		return fmt.Errorf("hash admin password: %w", err)
 	}

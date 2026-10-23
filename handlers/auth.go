@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"go-lang/auth"
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/security"
 )
 
 // UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *postgres.UserRepository a satisfaz.
@@ -18,11 +18,11 @@ type UserFinder interface {
 // AuthHandler atende a rota de login.
 type AuthHandler struct {
 	userRepository UserFinder
-	tokenManager   *auth.TokenManager
+	tokenManager   *security.TokenManager
 }
 
 // NewAuthHandler cria um AuthHandler que confere as credenciais em userRepository e emite tokens com tokenManager.
-func NewAuthHandler(userRepository UserFinder, tokenManager *auth.TokenManager) *AuthHandler {
+func NewAuthHandler(userRepository UserFinder, tokenManager *security.TokenManager) *AuthHandler {
 	return &AuthHandler{userRepository: userRepository, tokenManager: tokenManager}
 }
 
@@ -60,7 +60,7 @@ func (authHandler *AuthHandler) Login(responseWriter http.ResponseWriter, reques
 	user, err := authHandler.userRepository.FindByEmail(input.Email)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			auth.SpendPasswordCheck(input.Password)
+			security.SpendPasswordCheck(input.Password)
 			writeError(responseWriter, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
@@ -69,7 +69,7 @@ func (authHandler *AuthHandler) Login(responseWriter http.ResponseWriter, reques
 		return
 	}
 
-	if !auth.CheckPassword(user.Password, input.Password) {
+	if !security.CheckPassword(user.Password, input.Password) {
 		writeError(responseWriter, http.StatusUnauthorized, "invalid credentials")
 		return
 	}

@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"go-lang/auth"
 	"go-lang/handlers"
 	"go-lang/internal/infrastructure/config"
 	"go-lang/internal/infrastructure/postgres"
+	"go-lang/internal/infrastructure/security"
 )
 
 const (
@@ -44,7 +44,7 @@ func run() error {
 		return err
 	}
 
-	tokenManager := auth.NewTokenManager(config.JWTSecret(), tokenTTL)
+	tokenManager := security.NewTokenManager(config.JWTSecret(), tokenTTL)
 
 	bookHandler := handlers.NewBookHandler(bookRepository)
 	userHandler := handlers.NewUserHandler(userRepository)

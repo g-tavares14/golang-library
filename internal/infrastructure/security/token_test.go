@@ -1,4 +1,4 @@
-package auth_test
+package security_test
 
 import (
 	"errors"
@@ -7,13 +7,13 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"go-lang/auth"
+	"go-lang/internal/infrastructure/security"
 )
 
 var testSecret = []byte("0123456789012345678901234567890123456789")
 
 func TestTokenManagerRoundTrip(t *testing.T) {
-	tokenManager := auth.NewTokenManager(testSecret, time.Hour)
+	tokenManager := security.NewTokenManager(testSecret, time.Hour)
 
 	token, err := tokenManager.Issue("user-1", "admin")
 	if err != nil {
@@ -25,21 +25,21 @@ func TestTokenManagerRoundTrip(t *testing.T) {
 		t.Fatalf("Parse() error = %v", err)
 	}
 
-	want := auth.Claims{UserID: "user-1", Role: "admin"}
+	want := security.Claims{UserID: "user-1", Role: "admin"}
 	if claims != want {
 		t.Errorf("Parse() = %+v, want %+v", claims, want)
 	}
 }
 
 func TestTokenManagerParseRejects(t *testing.T) {
-	tokenManager := auth.NewTokenManager(testSecret, time.Hour)
+	tokenManager := security.NewTokenManager(testSecret, time.Hour)
 
-	expired, err := auth.NewTokenManager(testSecret, -time.Minute).Issue("user-1", "user")
+	expired, err := security.NewTokenManager(testSecret, -time.Minute).Issue("user-1", "user")
 	if err != nil {
 		t.Fatalf("Issue() error = %v", err)
 	}
 
-	otherSecret, err := auth.NewTokenManager([]byte("uma-outra-chave-com-mais-de-32-bytes!!"), time.Hour).Issue("user-1", "user")
+	otherSecret, err := security.NewTokenManager([]byte("uma-outra-chave-com-mais-de-32-bytes!!"), time.Hour).Issue("user-1", "user")
 	if err != nil {
 		t.Fatalf("Issue() error = %v", err)
 	}
@@ -78,7 +78,7 @@ func TestTokenManagerParseRejects(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := tokenManager.Parse(test.token)
-			if !errors.Is(err, auth.ErrInvalidToken) {
+			if !errors.Is(err, security.ErrInvalidToken) {
 				t.Errorf("Parse() error = %v, want ErrInvalidToken", err)
 			}
 		})
