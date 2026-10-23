@@ -19,3 +19,12 @@ func HashPassword(password string) (string, error) {
 func CheckPassword(hash, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
+
+// fakePasswordHash é um hash bcrypt sem dono, usado só para gastar o mesmo tempo de CPU.
+const fakePasswordHash = "$2a$10$7Rv8Qo8w6QzuQ6Tb7l4C7.yuMcjlO6JdP2HFmZRmY24rJ0dRIa7OG"
+
+// SpendPasswordCheck faz uma comparação bcrypt que sempre falha. Serve para o login de um
+// e-mail inexistente demorar o mesmo que o de uma senha errada, sem revelar quais e-mails existem.
+func SpendPasswordCheck(password string) {
+	CheckPassword(fakePasswordHash, password)
+}

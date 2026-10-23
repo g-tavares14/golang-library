@@ -88,6 +88,27 @@ func (userRepository *UserRepository) List() ([]models.User, error) {
 	return users, rows.Err()
 }
 
+// FindByEmail devolve o usuário com o e-mail informado, incluindo o hash da senha.
+// Devolve ErrUserNotFound quando nenhum usuário usa esse e-mail.
+func (userRepository *UserRepository) FindByEmail(email string) (*models.User, error) {
+	var user models.User
+
+	err := userRepository.db.QueryRow(
+		`SELECT id, name, email, password, created_at, role
+		 FROM users
+		 WHERE email = $1`,
+		email,
+	).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // Update altera o usuário e preenche CreatedAt com o valor que está no banco.
 // Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
 func (userRepository *UserRepository) Update(user *models.User) error {

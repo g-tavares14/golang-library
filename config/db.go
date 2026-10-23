@@ -42,3 +42,17 @@ func SetupDB() *sql.DB {
 
 	return database
 }
+
+// minJWTSecretLength é o tamanho mínimo, em bytes, aceito para a chave de assinatura dos tokens.
+const minJWTSecretLength = 32
+
+// JWTSecret lê a chave de assinatura dos tokens em JWT_SECRET e encerra o programa se faltar
+// ou for curta demais. Deve ser chamada depois de SetupDB, que carrega o .env.
+func JWTSecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if len(secret) < minJWTSecretLength {
+		log.Fatalf("JWT_SECRET must have at least %d characters", minJWTSecretLength)
+	}
+
+	return []byte(secret)
+}

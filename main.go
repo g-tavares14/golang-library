@@ -10,13 +10,18 @@ import (
 	"syscall"
 	"time"
 
+	"go-lang/auth"
 	"go-lang/config"
 	"go-lang/handlers"
 	"go-lang/repository"
 )
 
-// shutdownTimeout é o tempo máximo para as requisições em andamento terminarem no encerramento.
-const shutdownTimeout = 10 * time.Second
+const (
+	// shutdownTimeout é o tempo máximo para as requisições em andamento terminarem no encerramento.
+	shutdownTimeout = 10 * time.Second
+	// tokenTTL é por quanto tempo um token emitido no login continua válido.
+	tokenTTL = time.Hour
+)
 
 func main() {
 	if err := run(); err != nil {
@@ -35,12 +40,16 @@ func run() error {
 
 	bookRepository := repository.NewBookRepository(database)
 	userRepository := repository.NewUserRepository(database)
+	tokenManager := auth.NewTokenManager(config.JWTSecret(), tokenTTL)
+
 	bookHandler := handlers.NewBookHandler(bookRepository)
 	userHandler := handlers.NewUserHandler(userRepository)
+	authHandler := handlers.NewAuthHandler(userRepository, tokenManager)
 
 	serveMux := http.NewServeMux()
 	bookHandler.RegisterRoutes(serveMux)
 	userHandler.RegisterRoutes(serveMux)
+	authHandler.RegisterRoutes(serveMux)
 
 	server := &http.Server{
 		Addr:              ":8080",
