@@ -8,7 +8,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 - [x] **Papel decidido pelo servidor no cadastro.** `POST /users` aceita `"role": "admin"` de qualquer cliente (mass assignment). No cadastro público, force `user` e crie uma rota protegida para promover a admin.
 - [x] **Hash da senha.** `Create` e `Update` gravam a senha em texto puro. Usar `golang.org/x/crypto/bcrypt` antes de salvar (a coluna `password` é `VARCHAR(255)`, cabe o hash).
 - [x] **Não devolver `password` no JSON.** `Create` e `Update` respondem com `"password": "..."`. Criar uma struct de resposta (`UserResponse` sem a senha) e, de preferência, uma struct de entrada separada.
-- [ ] **Validar o formato do e-mail** e exigir uma senha mínima (hoje só checa se está vazio).
+- [x] **Validar o formato do e-mail** e exigir uma senha mínima (hoje só checa se está vazio).
 
 ## 🟡 2. API e código
 

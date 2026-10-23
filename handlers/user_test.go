@@ -14,7 +14,7 @@ func TestCreateUserForcesRoleUser(t *testing.T) {
 
 	// Mass assignment: o cliente tenta se cadastrar como admin.
 	recorder := app.do("POST", "/users", "",
-		`{"name":"Ana","email":"ana@example.com","password":"senha-longa-1","role":"admin"}`)
+		`{"name":"Ana","email":"ana@example.com","password":"Senha-longa-1","role":"admin"}`)
 	assertStatus(t, recorder, http.StatusCreated)
 
 	body := decode(t, recorder)
@@ -35,13 +35,13 @@ func TestCreateUserStoresHashAndHidesPassword(t *testing.T) {
 	app := newTestApp(t)
 
 	recorder := app.do("POST", "/users", "",
-		`{"name":"Ana","email":"ana@example.com","password":"senha-longa-1"}`)
+		`{"name":"Ana","email":"ana@example.com","password":"Senha-longa-1"}`)
 	assertStatus(t, recorder, http.StatusCreated)
 
 	if _, leaked := decode(t, recorder)["password"]; leaked {
 		t.Error("a resposta não pode conter password")
 	}
-	if strings.Contains(recorder.Body.String(), "senha-longa-1") {
+	if strings.Contains(recorder.Body.String(), "Senha-longa-1") {
 		t.Error("a resposta contém a senha em texto puro")
 	}
 
@@ -49,10 +49,10 @@ func TestCreateUserStoresHashAndHidesPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("usuário não foi gravado: %v", err)
 	}
-	if created.Password == "senha-longa-1" {
+	if created.Password == "Senha-longa-1" {
 		t.Fatal("a senha foi gravada em texto puro")
 	}
-	if !auth.CheckPassword(created.Password, "senha-longa-1") {
+	if !auth.CheckPassword(created.Password, "Senha-longa-1") {
 		t.Error("o hash gravado não corresponde à senha enviada")
 	}
 }
@@ -63,13 +63,13 @@ func TestCreateUserErrors(t *testing.T) {
 		body string
 		want int
 	}{
-		{"sem nome", `{"email":"ana@example.com","password":"senha-longa-1"}`, http.StatusBadRequest},
-		{"sem e-mail", `{"name":"Ana","password":"senha-longa-1"}`, http.StatusBadRequest},
+		{"sem nome", `{"email":"ana@example.com","password":"Senha-longa-1"}`, http.StatusBadRequest},
+		{"sem e-mail", `{"name":"Ana","password":"Senha-longa-1"}`, http.StatusBadRequest},
 		{"sem senha", `{"name":"Ana","email":"ana@example.com"}`, http.StatusBadRequest},
 		{"JSON inválido", `{`, http.StatusBadRequest},
 		{"senha acima de 72 bytes", `{"name":"Ana","email":"ana@example.com","password":"` +
 			strings.Repeat("a", 73) + `"}`, http.StatusBadRequest},
-		{"e-mail repetido", `{"name":"Outra","email":"maria@example.com","password":"senha-longa-1"}`, http.StatusConflict},
+		{"e-mail repetido", `{"name":"Outra","email":"maria@example.com","password":"Senha-longa-1"}`, http.StatusConflict},
 	}
 
 	for _, test := range tests {
@@ -114,7 +114,7 @@ func TestUpdateUserKeepsRole(t *testing.T) {
 
 	// Mesmo que o corpo traga "role", o PUT não pode mexer no papel.
 	recorder := app.do("PUT", "/users/"+app.memberID, app.adminToken,
-		`{"name":"Maria Silva","email":"maria@example.com","password":"nova-senha-1","role":"admin"}`)
+		`{"name":"Maria Silva","email":"maria@example.com","password":"Nova-senha-1","role":"admin"}`)
 	assertStatus(t, recorder, http.StatusOK)
 
 	body := decode(t, recorder)
@@ -129,7 +129,7 @@ func TestUpdateUserKeepsRole(t *testing.T) {
 	if stored.Role != models.RoleUser {
 		t.Errorf("role gravada = %q, want %q", stored.Role, models.RoleUser)
 	}
-	if !auth.CheckPassword(stored.Password, "nova-senha-1") {
+	if !auth.CheckPassword(stored.Password, "Nova-senha-1") {
 		t.Error("a nova senha não foi gravada como hash")
 	}
 }
@@ -158,11 +158,11 @@ func TestPatchUser(t *testing.T) {
 	t.Run("senha enviada é gravada como hash", func(t *testing.T) {
 		app := newTestApp(t)
 
-		recorder := app.do("PATCH", "/users/"+app.memberID, app.adminToken, `{"password":"outra-senha-1"}`)
+		recorder := app.do("PATCH", "/users/"+app.memberID, app.adminToken, `{"password":"Outra-senha-1"}`)
 		assertStatus(t, recorder, http.StatusOK)
 
 		stored := app.users.users[app.memberID]
-		if stored.Password == "outra-senha-1" || !auth.CheckPassword(stored.Password, "outra-senha-1") {
+		if stored.Password == "Outra-senha-1" || !auth.CheckPassword(stored.Password, "Outra-senha-1") {
 			t.Error("a senha não foi gravada como hash bcrypt")
 		}
 	})

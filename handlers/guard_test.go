@@ -26,7 +26,7 @@ func TestRoutePermissions(t *testing.T) {
 		{"alterar livro", "PUT", "/books/999", `{"title":"Go","author":"Pike"}`,
 			http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
 		{"apagar livro", "DELETE", "/books/999", "", http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
-		{"PUT usuário", "PUT", "/users/999", `{"name":"X","email":"x@example.com","password":"senha-longa-1"}`,
+		{"PUT usuário", "PUT", "/users/999", `{"name":"X","email":"x@example.com","password":"Senha-longa-1"}`,
 			http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
 		{"PATCH usuário", "PATCH", "/users/999", `{"name":"X"}`,
 			http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
@@ -101,6 +101,6 @@ func TestGuardIgnoresRoleInBody(t *testing.T) {
 
 	// O corpo diz "admin", mas o token é de usuário comum: quem manda é o token.
 	recorder := app.do("PUT", "/users/"+app.memberID, app.memberToken,
-		`{"name":"Maria","email":"maria@example.com","password":"senha-longa-1","role":"admin"}`)
+		`{"name":"Maria","email":"maria@example.com","password":"Senha-longa-1","role":"admin"}`)
 	assertStatus(t, recorder, http.StatusForbidden)
 }

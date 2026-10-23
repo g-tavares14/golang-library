@@ -26,7 +26,7 @@ Content-Type: application/json
 {
   "name": "Maria",
   "email": "maria@example.com",
-  "password": "senha-longa-1"
+  "password": "Senha-longa-1"
 }
 
 ### Listar usuários (exige login)
@@ -41,7 +41,7 @@ Content-Type: application/json
 {
   "name": "Maria Silva",
   "email": "maria@example.com",
-  "password": "nova-senha-1"
+  "password": "Nova-senha-1"
 }
 
 ### Alterar só alguns campos de um usuário (admin; troque o id)

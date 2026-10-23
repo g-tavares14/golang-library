@@ -51,6 +51,8 @@ O papel (`user` ou `admin`) vem do token assinado, nunca do corpo da requisiçã
 | `PUT` | `/books/{id}` | admin | Altera um livro |
 | `DELETE` | `/books/{id}` | admin | Apaga um livro |
 
+Regras de cadastro: o e-mail precisa ser um endereço simples (até 100 caracteres) e a senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula e número.
+
 Os erros vêm como `{"error": "..."}`. Exemplos prontos de cada requisição estão em [requests.http](requests.http), para rodar pelo GoLand.
 
 ## Desenvolvimento

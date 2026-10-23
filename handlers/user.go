@@ -59,6 +59,11 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 		return
 	}
 
+	if err := validateCredentials(user.Email, user.Password); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	// O cadastro é público: o papel é decidido pelo servidor, nunca pelo cliente.
 	user.Role = models.RoleUser
 
@@ -122,6 +127,11 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 		return
 	}
 
+	if err := validateCredentials(user.Email, user.Password); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	user.ID = request.PathValue("id")
 
 	passwordHash, err := auth.HashPassword(user.Password)
@@ -182,7 +192,19 @@ func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, reques
 		return
 	}
 
+	if patch.Email != nil {
+		if err := validateEmail(*patch.Email); err != nil {
+			writeError(responseWriter, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
 	if patch.Password != nil {
+		if err := validatePassword(*patch.Password); err != nil {
+			writeError(responseWriter, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		passwordHash, err := auth.HashPassword(*patch.Password)
 		if err != nil {
 			if errors.Is(err, auth.ErrPasswordTooLong) {
