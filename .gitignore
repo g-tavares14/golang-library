@@ -4,8 +4,8 @@
 # IDE
 .idea/
 
-# Binário gerado por go build
-/go-lang
+# Binário gerado por go build ./cmd/api
+/api
 
 # Testes e cobertura
 *.test

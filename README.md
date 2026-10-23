@@ -16,8 +16,8 @@ docker compose -f deployment/docker-compose.yml --env-file .env up -d db
 # 3. Migrations
 docker compose -f deployment/docker-compose.yml --env-file .env run --rm migrate up
 
-# 4. Servidor em http://localhost:8080
-go run .
+# 4. Servidor em http://localhost:8080 (rode da raiz: o .env é lido do diretório atual)
+go run ./cmd/api
 ```
 
 ### Variáveis do `.env`
