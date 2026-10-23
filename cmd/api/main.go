@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"go-lang/auth"
-	"go-lang/config"
 	"go-lang/handlers"
+	"go-lang/internal/infrastructure/config"
 	"go-lang/internal/infrastructure/postgres"
 )
 
