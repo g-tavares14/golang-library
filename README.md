@@ -1,0 +1,71 @@
+# go-lang
+
+API REST em Go com Postgres para livros e usuários, com login por JWT.
+
+## Como rodar
+
+Pré-requisitos: Go 1.27+ e Docker.
+
+```bash
+# 1. Variáveis de ambiente (edite JWT_SECRET, ADMIN_PASSWORD e DB_PASSWORD)
+cp .env.example .env
+
+# 2. Banco de dados
+docker compose up -d db
+
+# 3. Migrations
+docker compose run --rm migrate up
+
+# 4. Servidor em http://localhost:8080
+go run .
+```
+
+### Variáveis do `.env`
+
+| Variável | Para que serve |
+| --- | --- |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexão com o Postgres (o Compose usa os mesmos valores) |
+| `JWT_SECRET` | Chave que assina os tokens, com no mínimo 32 caracteres. Gere uma com `openssl rand -base64 48` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Admin inicial, criado na subida do servidor se o e-mail ainda não existir. Deixe `ADMIN_EMAIL` vazio para não criar |
+
+## Autenticação
+
+1. `POST /login` com e-mail e senha devolve `{"token": "..."}` (válido por 1 hora).
+2. Envie o token nas demais rotas: `Authorization: Bearer <token>`.
+
+O papel (`user` ou `admin`) vem do token assinado, nunca do corpo da requisição. O cadastro público sempre cria `user`; só um admin promove alguém, em `PUT /users/{id}/role`.
+
+## Endpoints
+
+| Método | Rota | Acesso | Descrição |
+| --- | --- | --- | --- |
+| `POST` | `/login` | público | Troca e-mail e senha por um token |
+| `POST` | `/users` | público | Cadastra um usuário (papel `user`) |
+| `GET` | `/users` | login | Lista usuários |
+| `PUT` | `/users/{id}` | admin | Substitui nome, e-mail e senha (todos obrigatórios) |
+| `PATCH` | `/users/{id}` | admin | Altera só os campos enviados |
+| `PUT` | `/users/{id}/role` | admin | Define o papel: `{"role": "admin"}` ou `{"role": "user"}` (não vale para o próprio admin) |
+| `DELETE` | `/users/{id}` | admin | Apaga o usuário |
+| `GET` | `/books` | login | Lista livros |
+| `POST` | `/books` | admin | Cria um livro |
+| `PUT` | `/books/{id}` | admin | Altera um livro |
+| `DELETE` | `/books/{id}` | admin | Apaga um livro |
+
+Os erros vêm como `{"error": "..."}`. Exemplos prontos de cada requisição estão em [requests.http](requests.http), para rodar pelo GoLand.
+
+## Desenvolvimento
+
+```bash
+go build ./...
+golangci-lint fmt --diff ./...   # formatação
+golangci-lint run ./...          # lint
+go test ./...                    # auth e handlers rodam sempre
+```
+
+Os testes de `repository` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:
+
+```bash
+TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" go test ./repository/
+```
+
+A CI (`.github/workflows/ci.yml`) roda build, formatação, lint e testes a cada push.
