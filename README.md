@@ -61,7 +61,7 @@ Os erros vêm como `{"error": "..."}`. Exemplos prontos de cada requisição est
 go build ./...
 golangci-lint fmt --diff ./...   # formatação
 golangci-lint run ./...          # lint
-go test ./...                    # auth e handlers rodam sempre
+go test ./...                    # security e rest rodam sempre
 ```
 
 Os testes de `postgres` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:

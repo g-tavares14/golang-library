@@ -1,4 +1,4 @@
-package handlers_test
+package rest_test
 
 import (
 	"net/http"

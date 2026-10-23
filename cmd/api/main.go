@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"go-lang/handlers"
 	"go-lang/internal/infrastructure/config"
 	"go-lang/internal/infrastructure/postgres"
+	"go-lang/internal/infrastructure/rest"
 	"go-lang/internal/infrastructure/security"
 )
 
@@ -46,10 +46,10 @@ func run() error {
 
 	tokenManager := security.NewTokenManager(config.JWTSecret(), tokenTTL)
 
-	bookHandler := handlers.NewBookHandler(bookRepository)
-	userHandler := handlers.NewUserHandler(userRepository)
-	authHandler := handlers.NewAuthHandler(userRepository, tokenManager)
-	guard := handlers.NewGuard(tokenManager)
+	bookHandler := rest.NewBookHandler(bookRepository)
+	userHandler := rest.NewUserHandler(userRepository)
+	authHandler := rest.NewAuthHandler(userRepository, tokenManager)
+	guard := rest.NewGuard(tokenManager)
 
 	serveMux := http.NewServeMux()
 	bookHandler.RegisterRoutes(serveMux, guard)

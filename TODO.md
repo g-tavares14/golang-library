@@ -4,7 +4,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 ## 🔴 1. Segurança (a refatoração que ficou para depois)
 
-- [x] **Autenticação e autorização.** Hoje o `PUT /users/{id}` decide "é admin?" pelo `role` que vem no **corpo** da requisição ([handlers/user.go](handlers/user.go), `Update`). Qualquer pessoa passa mandando `"role": "admin"`. Precisa de login (por exemplo JWT) e um middleware que leia o papel do token, e não do JSON.
+- [x] **Autenticação e autorização.** Hoje o `PUT /users/{id}` decide "é admin?" pelo `role` que vem no **corpo** da requisição ([user.go](internal/infrastructure/rest/user.go), `Update`). Qualquer pessoa passa mandando `"role": "admin"`. Precisa de login (por exemplo JWT) e um middleware que leia o papel do token, e não do JSON.
 - [x] **Papel decidido pelo servidor no cadastro.** `POST /users` aceita `"role": "admin"` de qualquer cliente (mass assignment). No cadastro público, force `user` e crie uma rota protegida para promover a admin.
 - [x] **Hash da senha.** `Create` e `Update` gravam a senha em texto puro. Usar `golang.org/x/crypto/bcrypt` antes de salvar (a coluna `password` é `VARCHAR(255)`, cabe o hash).
 - [x] **Não devolver `password` no JSON.** `Create` e `Update` respondem com `"password": "..."`. Criar uma struct de resposta (`UserResponse` sem a senha) e, de preferência, uma struct de entrada separada.
@@ -20,7 +20,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 ## 🟢 3. Projeto e ferramentas
 
-- [x] **Testes.** Não existe nenhum `*_test.go`. Feito: handlers com `httptest` e `auth` rodam sempre; os testes de `postgres` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
+- [x] **Testes.** Não existe nenhum `*_test.go`. Feito: rest (com `httptest`) e `security` rodam sempre; os testes de `postgres` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
 - [x] **README** com: subir o banco (`docker compose -f deployment/docker-compose.yml --env-file .env up -d db`), rodar migrations (`docker compose -f deployment/docker-compose.yml --env-file .env run --rm migrate up`), copiar o `.env.example`, rodar (`go run ./cmd/api`) e a lista de endpoints.
 - [x] **CI no GitHub Actions** rodando `go build ./...`, `golangci-lint fmt --diff ./...` e `golangci-lint run ./...` a cada push.
 - [x] **Arquivo `.http`** no repositório documentando as rotas (criar, listar, atualizar, apagar) para testar pelo GoLand.

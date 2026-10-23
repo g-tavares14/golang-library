@@ -1,4 +1,4 @@
-package handlers_test
+package rest_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"go-lang/handlers"
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/rest"
 	"go-lang/internal/infrastructure/security"
 )
 
@@ -204,10 +204,10 @@ func newTestApp(t *testing.T) *testApp {
 	app.adminToken = app.issueToken(t, app.adminID, domain.RoleAdmin)
 	app.memberToken = app.issueToken(t, app.memberID, domain.RoleUser)
 
-	guard := handlers.NewGuard(app.tokenManager)
-	handlers.NewBookHandler(app.books).RegisterRoutes(app.mux, guard)
-	handlers.NewUserHandler(app.users).RegisterRoutes(app.mux, guard)
-	handlers.NewAuthHandler(app.users, app.tokenManager).RegisterRoutes(app.mux)
+	guard := rest.NewGuard(app.tokenManager)
+	rest.NewBookHandler(app.books).RegisterRoutes(app.mux, guard)
+	rest.NewUserHandler(app.users).RegisterRoutes(app.mux, guard)
+	rest.NewAuthHandler(app.users, app.tokenManager).RegisterRoutes(app.mux)
 
 	return app
 }
