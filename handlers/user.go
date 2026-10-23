@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 
-	"go-lang/models"
 	"go-lang/repository"
 )
 
@@ -39,13 +38,15 @@ func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux) {
 
 // Create trata POST /users.
 func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
-	var user models.User
+	var input userInput
 
-	err := json.NewDecoder(request.Body).Decode(&user)
+	err := json.NewDecoder(request.Body).Decode(&input)
 	if err != nil {
 		writeError(responseWriter, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	user := input.toUser()
 
 	if user.Name == "" || user.Email == "" || user.Password == "" {
 		writeError(responseWriter, http.StatusBadRequest, "user name, email or password is empty")
@@ -71,7 +72,7 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusCreated, user)
+	writeJSON(responseWriter, http.StatusCreated, newUserResponse(&user))
 }
 
 // List trata GET /users.
@@ -83,18 +84,25 @@ func (userHandler *UserHandler) List(responseWriter http.ResponseWriter, _ *http
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusOK, users)
+	var responses []userResponse
+	for i := range users {
+		responses = append(responses, newUserResponse(&users[i]))
+	}
+
+	writeJSON(responseWriter, http.StatusOK, responses)
 }
 
 // Update trata PUT /users/{id}.
 func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
-	var user models.User
+	var input userInput
 
-	err := json.NewDecoder(request.Body).Decode(&user)
+	err := json.NewDecoder(request.Body).Decode(&input)
 	if err != nil {
 		writeError(responseWriter, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	user := input.toUser()
 
 	if user.Name == "" || user.Email == "" || user.Password == "" {
 		writeError(responseWriter, http.StatusBadRequest, "user name, email or password is empty")
@@ -127,7 +135,7 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusOK, user)
+	writeJSON(responseWriter, http.StatusOK, newUserResponse(&user))
 }
 
 // Delete trata DELETE /users/{id}.
@@ -147,5 +155,5 @@ func (userHandler *UserHandler) Delete(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	writeJSON(responseWriter, http.StatusOK, user)
+	writeJSON(responseWriter, http.StatusOK, newUserResponse(user))
 }
