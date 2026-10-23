@@ -11,3 +11,11 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	Role      string    `json:"role"`
 }
+
+// UserPatch reúne os campos de um usuário que podem ser alterados parcialmente.
+// Um campo nil significa "manter o valor atual".
+type UserPatch struct {
+	Name     *string
+	Email    *string
+	Password *string
+}

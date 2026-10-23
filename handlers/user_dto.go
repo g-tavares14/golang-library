@@ -24,6 +24,22 @@ func (input userInput) toUser() models.User {
 	}
 }
 
+// userPatchInput é o corpo JSON aceito em PATCH /users/{id}. Campos ausentes ficam nil e não mudam.
+type userPatchInput struct {
+	Name     *string `json:"name"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
+}
+
+// toPatch converte a entrada para o modelo usado pelo repository.
+func (input userPatchInput) toPatch() models.UserPatch {
+	return models.UserPatch{
+		Name:     input.Name,
+		Email:    input.Email,
+		Password: input.Password,
+	}
+}
+
 // roleInput é o corpo JSON aceito em PUT /users/{id}/role.
 type roleInput struct {
 	Role string `json:"role"`

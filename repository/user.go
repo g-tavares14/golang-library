@@ -146,6 +146,30 @@ func (userRepository *UserRepository) Update(user *models.User) error {
 	return translateUserError(err)
 }
 
+// Patch altera só os campos não nulos de patch e devolve o registro atualizado, sem a senha.
+// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) Patch(userID string, patch models.UserPatch) (*models.User, error) {
+	var user models.User
+
+	err := userRepository.db.QueryRow(
+		`UPDATE users
+		 SET name = COALESCE($1, name),
+		     email = COALESCE($2, email),
+		     password = COALESCE($3, password)
+		 WHERE id = $4
+		 RETURNING id, name, email, created_at, role`,
+		patch.Name, patch.Email, patch.Password, userID,
+	).Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, translateUserError(err)
+	}
+
+	return &user, nil
+}
+
 // UpdateRole altera o papel do usuário e devolve o registro atualizado, sem a senha.
 // Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
 func (userRepository *UserRepository) UpdateRole(userID, role string) (*models.User, error) {

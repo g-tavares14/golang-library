@@ -22,11 +22,12 @@ func NewUserHandler(userRepository *repository.UserRepository) *UserHandler {
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
-// O cadastro é público; listar exige login; alterar, apagar e mudar o papel exigem admin.
+// O cadastro é público; listar exige login; alterar (PUT e PATCH), apagar e mudar o papel exigem admin.
 func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux, guard *Guard) {
 	serveMux.HandleFunc("POST /users", userHandler.Create)
 	serveMux.HandleFunc("GET /users", guard.RequireLogin(userHandler.List))
 	serveMux.HandleFunc("PUT /users/{id}", guard.RequireAdmin(userHandler.Update))
+	serveMux.HandleFunc("PATCH /users/{id}", guard.RequireAdmin(userHandler.Patch))
 	serveMux.HandleFunc("DELETE /users/{id}", guard.RequireAdmin(userHandler.Delete))
 	serveMux.HandleFunc("PUT /users/{id}/role", guard.RequireAdmin(userHandler.UpdateRole))
 }
@@ -145,6 +146,66 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 	}
 
 	writeJSON(responseWriter, http.StatusOK, newUserResponse(&user))
+}
+
+// Patch trata PATCH /users/{id}: altera só os campos enviados, então dá para trocar o nome sem reenviar a senha.
+func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, request *http.Request) {
+	var input userPatchInput
+
+	err := json.NewDecoder(request.Body).Decode(&input)
+	if err != nil {
+		writeError(responseWriter, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	patch := input.toPatch()
+
+	if patch.Name == nil && patch.Email == nil && patch.Password == nil {
+		writeError(responseWriter, http.StatusBadRequest, "no fields to update")
+		return
+	}
+
+	if (patch.Name != nil && *patch.Name == "") ||
+		(patch.Email != nil && *patch.Email == "") ||
+		(patch.Password != nil && *patch.Password == "") {
+		writeError(responseWriter, http.StatusBadRequest, "user name, email or password is empty")
+		return
+	}
+
+	if patch.Password != nil {
+		passwordHash, err := auth.HashPassword(*patch.Password)
+		if err != nil {
+			if errors.Is(err, auth.ErrPasswordTooLong) {
+				writeError(responseWriter, http.StatusBadRequest, "password is too long")
+				return
+			}
+			log.Println("hash password:", err)
+			writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		patch.Password = &passwordHash
+	}
+
+	user, err := userHandler.userRepository.Patch(request.PathValue("id"), patch)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			writeError(responseWriter, http.StatusNotFound, "user not found")
+			return
+		}
+		if errors.Is(err, repository.ErrInvalidUserID) {
+			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
+			return
+		}
+		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+			writeError(responseWriter, http.StatusConflict, "email already exists")
+			return
+		}
+		log.Println("patch user:", err)
+		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, newUserResponse(user))
 }
 
 // Delete trata DELETE /users/{id}.
