@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"go-lang/auth"
-	"go-lang/models"
+	"go-lang/internal/domain"
 )
 
 func TestCreateUserForcesRoleUser(t *testing.T) {
@@ -18,16 +18,16 @@ func TestCreateUserForcesRoleUser(t *testing.T) {
 	assertStatus(t, recorder, http.StatusCreated)
 
 	body := decode(t, recorder)
-	if body["role"] != models.RoleUser {
-		t.Errorf("role na resposta = %v, want %q", body["role"], models.RoleUser)
+	if body["role"] != domain.RoleUser {
+		t.Errorf("role na resposta = %v, want %q", body["role"], domain.RoleUser)
 	}
 
 	created, err := app.users.FindByEmail("ana@example.com")
 	if err != nil {
 		t.Fatalf("usuário não foi gravado: %v", err)
 	}
-	if created.Role != models.RoleUser {
-		t.Errorf("role gravada = %q, want %q", created.Role, models.RoleUser)
+	if created.Role != domain.RoleUser {
+		t.Errorf("role gravada = %q, want %q", created.Role, domain.RoleUser)
 	}
 }
 
@@ -118,16 +118,16 @@ func TestUpdateUserKeepsRole(t *testing.T) {
 	assertStatus(t, recorder, http.StatusOK)
 
 	body := decode(t, recorder)
-	if body["role"] != models.RoleUser {
-		t.Errorf("role na resposta = %v, want %q", body["role"], models.RoleUser)
+	if body["role"] != domain.RoleUser {
+		t.Errorf("role na resposta = %v, want %q", body["role"], domain.RoleUser)
 	}
 	if _, leaked := body["password"]; leaked {
 		t.Error("a resposta não pode conter password")
 	}
 
 	stored := app.users.users[app.memberID]
-	if stored.Role != models.RoleUser {
-		t.Errorf("role gravada = %q, want %q", stored.Role, models.RoleUser)
+	if stored.Role != domain.RoleUser {
+		t.Errorf("role gravada = %q, want %q", stored.Role, domain.RoleUser)
 	}
 	if !auth.CheckPassword(stored.Password, "Nova-senha-1") {
 		t.Error("a nova senha não foi gravada como hash")
@@ -196,10 +196,10 @@ func TestUpdateUserRole(t *testing.T) {
 		recorder := app.do("PUT", "/users/"+app.memberID+"/role", app.adminToken, `{"role":"admin"}`)
 		assertStatus(t, recorder, http.StatusOK)
 
-		if got := decode(t, recorder)["role"]; got != models.RoleAdmin {
-			t.Errorf("role = %v, want %q", got, models.RoleAdmin)
+		if got := decode(t, recorder)["role"]; got != domain.RoleAdmin {
+			t.Errorf("role = %v, want %q", got, domain.RoleAdmin)
 		}
-		if app.users.users[app.memberID].Role != models.RoleAdmin {
+		if app.users.users[app.memberID].Role != domain.RoleAdmin {
 			t.Error("o papel não foi gravado")
 		}
 	})
@@ -210,7 +210,7 @@ func TestUpdateUserRole(t *testing.T) {
 		recorder := app.do("PUT", "/users/"+app.adminID+"/role", app.adminToken, `{"role":"user"}`)
 		assertStatus(t, recorder, http.StatusForbidden)
 
-		if app.users.users[app.adminID].Role != models.RoleAdmin {
+		if app.users.users[app.adminID].Role != domain.RoleAdmin {
 			t.Error("o admin foi rebaixado")
 		}
 	})

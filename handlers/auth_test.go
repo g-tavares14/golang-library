@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"go-lang/models"
+	"go-lang/internal/domain"
 )
 
 func TestLoginSuccess(t *testing.T) {
@@ -19,8 +19,8 @@ func TestLoginSuccess(t *testing.T) {
 		t.Fatalf("token devolvido é inválido: %v", err)
 	}
 
-	if claims.UserID != app.adminID || claims.Role != models.RoleAdmin {
-		t.Errorf("claims = %+v, want UserID=%s Role=%s", claims, app.adminID, models.RoleAdmin)
+	if claims.UserID != app.adminID || claims.Role != domain.RoleAdmin {
+		t.Errorf("claims = %+v, want UserID=%s Role=%s", claims, app.adminID, domain.RoleAdmin)
 	}
 }
 

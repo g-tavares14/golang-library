@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/lib/pq" // driver do PostgreSQL para o database/sql
 
-	"go-lang/models"
+	"go-lang/internal/domain"
 	"go-lang/repository"
 )
 
@@ -45,10 +45,10 @@ func uniqueEmail(prefix string) string {
 }
 
 // newTestUser cria um usuário no banco e o apaga ao final do teste.
-func newTestUser(t *testing.T, database *sql.DB, role string) *models.User {
+func newTestUser(t *testing.T, database *sql.DB, role string) *domain.User {
 	t.Helper()
 
-	user := &models.User{Name: "Teste", Email: uniqueEmail("user"), Password: "hash", Role: role}
+	user := &domain.User{Name: "Teste", Email: uniqueEmail("user"), Password: "hash", Role: role}
 	if err := repository.NewUserRepository(database).Create(user); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -61,7 +61,7 @@ func TestUserCreateAndFindByEmail(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
 
-	created := newTestUser(t, database, models.RoleUser)
+	created := newTestUser(t, database, domain.RoleUser)
 	if created.ID == "" || created.CreatedAt.IsZero() {
 		t.Fatalf("Create() não preencheu ID e CreatedAt: %+v", created)
 	}
@@ -70,23 +70,23 @@ func TestUserCreateAndFindByEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FindByEmail() error = %v", err)
 	}
-	if found.ID != created.ID || found.Password != "hash" || found.Role != models.RoleUser {
+	if found.ID != created.ID || found.Password != "hash" || found.Role != domain.RoleUser {
 		t.Errorf("FindByEmail() = %+v, want o usuário criado", found)
 	}
 
 	_, err = userRepository.FindByEmail(uniqueEmail("ninguem"))
-	if !errors.Is(err, repository.ErrUserNotFound) {
+	if !errors.Is(err, domain.ErrUserNotFound) {
 		t.Errorf("FindByEmail() de e-mail inexistente: error = %v, want ErrUserNotFound", err)
 	}
 }
 
 func TestUserCreateDuplicateEmail(t *testing.T) {
 	database := openTestDB(t)
-	existing := newTestUser(t, database, models.RoleUser)
+	existing := newTestUser(t, database, domain.RoleUser)
 
-	duplicate := &models.User{Name: "Outro", Email: existing.Email, Password: "hash", Role: models.RoleUser}
+	duplicate := &domain.User{Name: "Outro", Email: existing.Email, Password: "hash", Role: domain.RoleUser}
 	err := repository.NewUserRepository(database).Create(duplicate)
-	if !errors.Is(err, repository.ErrEmailAlreadyExists) {
+	if !errors.Is(err, domain.ErrEmailAlreadyExists) {
 		t.Errorf("Create() error = %v, want ErrEmailAlreadyExists", err)
 	}
 }
@@ -95,7 +95,7 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
 
-	admin := &models.User{Name: "Admin", Email: uniqueEmail("seed"), Password: "hash", Role: models.RoleAdmin}
+	admin := &domain.User{Name: "Admin", Email: uniqueEmail("seed"), Password: "hash", Role: domain.RoleAdmin}
 	t.Cleanup(func() { _, _ = database.Exec(`DELETE FROM users WHERE email = $1`, admin.Email) })
 
 	created, err := userRepository.CreateIfEmailMissing(admin)
@@ -103,7 +103,7 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 		t.Fatalf("primeira chamada: created = %v, error = %v, want true, nil", created, err)
 	}
 
-	again := &models.User{Name: "Outro nome", Email: admin.Email, Password: "outro-hash", Role: models.RoleUser}
+	again := &domain.User{Name: "Outro nome", Email: admin.Email, Password: "outro-hash", Role: domain.RoleUser}
 	created, err = userRepository.CreateIfEmailMissing(again)
 	if err != nil || created {
 		t.Fatalf("segunda chamada: created = %v, error = %v, want false, nil", created, err)
@@ -113,7 +113,7 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FindByEmail() error = %v", err)
 	}
-	if found.Role != models.RoleAdmin || found.Password != "hash" {
+	if found.Role != domain.RoleAdmin || found.Password != "hash" {
 		t.Errorf("o registro existente foi alterado: %+v", found)
 	}
 }
@@ -121,22 +121,22 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 func TestUserUpdateKeepsRole(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
-	created := newTestUser(t, database, models.RoleAdmin)
+	created := newTestUser(t, database, domain.RoleAdmin)
 
 	// Role fica vazio de propósito: o Update não pode tocar nele.
-	update := &models.User{ID: created.ID, Name: "Novo nome", Email: created.Email, Password: "novo-hash"}
+	update := &domain.User{ID: created.ID, Name: "Novo nome", Email: created.Email, Password: "novo-hash"}
 	if err := userRepository.Update(update); err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
-	if update.Role != models.RoleAdmin {
-		t.Errorf("Update() devolveu role = %q, want %q", update.Role, models.RoleAdmin)
+	if update.Role != domain.RoleAdmin {
+		t.Errorf("Update() devolveu role = %q, want %q", update.Role, domain.RoleAdmin)
 	}
 
 	found, err := userRepository.FindByEmail(created.Email)
 	if err != nil {
 		t.Fatalf("FindByEmail() error = %v", err)
 	}
-	if found.Role != models.RoleAdmin || found.Name != "Novo nome" || found.Password != "novo-hash" {
+	if found.Role != domain.RoleAdmin || found.Name != "Novo nome" || found.Password != "novo-hash" {
 		t.Errorf("registro após Update = %+v", found)
 	}
 }
@@ -145,20 +145,20 @@ func TestUserUpdateErrors(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
 
-	missing := &models.User{ID: "00000000-0000-0000-0000-000000000000", Name: "X", Email: uniqueEmail("x"), Password: "h"}
-	if err := userRepository.Update(missing); !errors.Is(err, repository.ErrUserNotFound) {
+	missing := &domain.User{ID: "00000000-0000-0000-0000-000000000000", Name: "X", Email: uniqueEmail("x"), Password: "h"}
+	if err := userRepository.Update(missing); !errors.Is(err, domain.ErrUserNotFound) {
 		t.Errorf("Update() de id inexistente: error = %v, want ErrUserNotFound", err)
 	}
 
-	invalid := &models.User{ID: "nao-e-uuid", Name: "X", Email: uniqueEmail("x"), Password: "h"}
-	if err := userRepository.Update(invalid); !errors.Is(err, repository.ErrInvalidUserID) {
+	invalid := &domain.User{ID: "nao-e-uuid", Name: "X", Email: uniqueEmail("x"), Password: "h"}
+	if err := userRepository.Update(invalid); !errors.Is(err, domain.ErrInvalidUserID) {
 		t.Errorf("Update() de id inválido: error = %v, want ErrInvalidUserID", err)
 	}
 
-	first := newTestUser(t, database, models.RoleUser)
-	second := newTestUser(t, database, models.RoleUser)
-	clash := &models.User{ID: second.ID, Name: "X", Email: first.Email, Password: "h"}
-	if err := userRepository.Update(clash); !errors.Is(err, repository.ErrEmailAlreadyExists) {
+	first := newTestUser(t, database, domain.RoleUser)
+	second := newTestUser(t, database, domain.RoleUser)
+	clash := &domain.User{ID: second.ID, Name: "X", Email: first.Email, Password: "h"}
+	if err := userRepository.Update(clash); !errors.Is(err, domain.ErrEmailAlreadyExists) {
 		t.Errorf("Update() com e-mail de outro: error = %v, want ErrEmailAlreadyExists", err)
 	}
 }
@@ -166,14 +166,14 @@ func TestUserUpdateErrors(t *testing.T) {
 func TestUserPatchChangesOnlySentFields(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
-	created := newTestUser(t, database, models.RoleUser)
+	created := newTestUser(t, database, domain.RoleUser)
 
 	newName := "Só o nome"
-	patched, err := userRepository.Patch(created.ID, models.UserPatch{Name: &newName})
+	patched, err := userRepository.Patch(created.ID, domain.UserPatch{Name: &newName})
 	if err != nil {
 		t.Fatalf("Patch() error = %v", err)
 	}
-	if patched.Name != newName || patched.Email != created.Email || patched.Role != models.RoleUser {
+	if patched.Name != newName || patched.Email != created.Email || patched.Role != domain.RoleUser {
 		t.Errorf("Patch() = %+v", patched)
 	}
 
@@ -185,8 +185,8 @@ func TestUserPatchChangesOnlySentFields(t *testing.T) {
 		t.Errorf("a senha mudou, mas o Patch não a enviou: %q", found.Password)
 	}
 
-	_, err = userRepository.Patch("00000000-0000-0000-0000-000000000000", models.UserPatch{Name: &newName})
-	if !errors.Is(err, repository.ErrUserNotFound) {
+	_, err = userRepository.Patch("00000000-0000-0000-0000-000000000000", domain.UserPatch{Name: &newName})
+	if !errors.Is(err, domain.ErrUserNotFound) {
 		t.Errorf("Patch() de id inexistente: error = %v, want ErrUserNotFound", err)
 	}
 }
@@ -194,23 +194,23 @@ func TestUserPatchChangesOnlySentFields(t *testing.T) {
 func TestUserUpdateRole(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
-	created := newTestUser(t, database, models.RoleUser)
+	created := newTestUser(t, database, domain.RoleUser)
 
-	promoted, err := userRepository.UpdateRole(created.ID, models.RoleAdmin)
+	promoted, err := userRepository.UpdateRole(created.ID, domain.RoleAdmin)
 	if err != nil {
 		t.Fatalf("UpdateRole() error = %v", err)
 	}
-	if promoted.Role != models.RoleAdmin || promoted.Email != created.Email {
+	if promoted.Role != domain.RoleAdmin || promoted.Email != created.Email {
 		t.Errorf("UpdateRole() = %+v", promoted)
 	}
 
-	_, err = userRepository.UpdateRole("00000000-0000-0000-0000-000000000000", models.RoleAdmin)
-	if !errors.Is(err, repository.ErrUserNotFound) {
+	_, err = userRepository.UpdateRole("00000000-0000-0000-0000-000000000000", domain.RoleAdmin)
+	if !errors.Is(err, domain.ErrUserNotFound) {
 		t.Errorf("UpdateRole() de id inexistente: error = %v, want ErrUserNotFound", err)
 	}
 
-	_, err = userRepository.UpdateRole("nao-e-uuid", models.RoleAdmin)
-	if !errors.Is(err, repository.ErrInvalidUserID) {
+	_, err = userRepository.UpdateRole("nao-e-uuid", domain.RoleAdmin)
+	if !errors.Is(err, domain.ErrInvalidUserID) {
 		t.Errorf("UpdateRole() de id inválido: error = %v, want ErrInvalidUserID", err)
 	}
 }
@@ -218,7 +218,7 @@ func TestUserUpdateRole(t *testing.T) {
 func TestUserListAndDelete(t *testing.T) {
 	database := openTestDB(t)
 	userRepository := repository.NewUserRepository(database)
-	created := newTestUser(t, database, models.RoleUser)
+	created := newTestUser(t, database, domain.RoleUser)
 
 	users, err := userRepository.List()
 	if err != nil {
@@ -242,10 +242,10 @@ func TestUserListAndDelete(t *testing.T) {
 	if err != nil || deleted.ID != created.ID {
 		t.Fatalf("Delete() = %+v, %v", deleted, err)
 	}
-	if _, err := userRepository.Delete(created.ID); !errors.Is(err, repository.ErrUserNotFound) {
+	if _, err := userRepository.Delete(created.ID); !errors.Is(err, domain.ErrUserNotFound) {
 		t.Errorf("Delete() repetido: error = %v, want ErrUserNotFound", err)
 	}
-	if _, err := userRepository.Delete("nao-e-uuid"); !errors.Is(err, repository.ErrInvalidUserID) {
+	if _, err := userRepository.Delete("nao-e-uuid"); !errors.Is(err, domain.ErrInvalidUserID) {
 		t.Errorf("Delete() de id inválido: error = %v, want ErrInvalidUserID", err)
 	}
 }
@@ -255,7 +255,7 @@ func TestBookLifecycle(t *testing.T) {
 	bookRepository := repository.NewBookRepository(database)
 
 	description := "Clássico"
-	book := &models.Book{Title: "A Linguagem Go", Author: "Donovan", Description: &description}
+	book := &domain.Book{Title: "A Linguagem Go", Author: "Donovan", Description: &description}
 	if err := bookRepository.Create(book); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -274,7 +274,7 @@ func TestBookLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}
-	var found *models.Book
+	var found *domain.Book
 	for i := range books {
 		if books[i].ID == book.ID {
 			found = &books[i]
@@ -288,13 +288,13 @@ func TestBookLifecycle(t *testing.T) {
 	if err != nil || deleted.ID != book.ID {
 		t.Fatalf("Delete() = %+v, %v", deleted, err)
 	}
-	if _, err := bookRepository.Delete(book.ID); !errors.Is(err, repository.ErrBookNotFound) {
+	if _, err := bookRepository.Delete(book.ID); !errors.Is(err, domain.ErrBookNotFound) {
 		t.Errorf("Delete() repetido: error = %v, want ErrBookNotFound", err)
 	}
-	if _, err := bookRepository.Delete("nao-e-uuid"); !errors.Is(err, repository.ErrInvalidBookID) {
+	if _, err := bookRepository.Delete("nao-e-uuid"); !errors.Is(err, domain.ErrInvalidBookID) {
 		t.Errorf("Delete() de id inválido: error = %v, want ErrInvalidBookID", err)
 	}
-	if err := bookRepository.Update(&models.Book{ID: "nao-e-uuid", Title: "x", Author: "y"}); !errors.Is(err, repository.ErrInvalidBookID) {
+	if err := bookRepository.Update(&domain.Book{ID: "nao-e-uuid", Title: "x", Author: "y"}); !errors.Is(err, domain.ErrInvalidBookID) {
 		t.Errorf("Update() de id inválido: error = %v, want ErrInvalidBookID", err)
 	}
 }

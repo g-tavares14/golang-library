@@ -3,11 +3,11 @@ package handlers
 import (
 	"time"
 
-	"go-lang/models"
+	"go-lang/internal/domain"
 )
 
 // userInput é o corpo JSON aceito ao criar ou atualizar um usuário.
-// É separado de models.User para que o cliente só controle os campos permitidos:
+// É separado de domain.User para que o cliente só controle os campos permitidos:
 // o papel (role) nunca vem do corpo da requisição.
 type userInput struct {
 	Name     string `json:"name"`
@@ -16,8 +16,8 @@ type userInput struct {
 }
 
 // toUser converte a entrada para o modelo usado pelo repository.
-func (input userInput) toUser() models.User {
-	return models.User{
+func (input userInput) toUser() domain.User {
+	return domain.User{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
@@ -32,8 +32,8 @@ type userPatchInput struct {
 }
 
 // toPatch converte a entrada para o modelo usado pelo repository.
-func (input userPatchInput) toPatch() models.UserPatch {
-	return models.UserPatch{
+func (input userPatchInput) toPatch() domain.UserPatch {
+	return domain.UserPatch{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
@@ -55,7 +55,7 @@ type userResponse struct {
 }
 
 // newUserResponse converte o modelo para a resposta pública, sem a senha.
-func newUserResponse(user *models.User) userResponse {
+func newUserResponse(user *domain.User) userResponse {
 	return userResponse{
 		ID:        user.ID,
 		Name:      user.Name,

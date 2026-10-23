@@ -7,16 +7,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"go-lang/models"
-)
-
-var (
-	// ErrUserNotFound é devolvido quando nenhum usuário tem o id pedido.
-	ErrUserNotFound = errors.New("user not found")
-	// ErrEmailAlreadyExists é devolvido quando o e-mail informado já está em uso.
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	// ErrInvalidUserID é devolvido quando o id informado não é um UUID válido.
-	ErrInvalidUserID = errors.New("invalid user id")
+	"go-lang/internal/domain"
 )
 
 // Códigos de erro do Postgres que o repository traduz para erros do domínio.
@@ -31,9 +22,9 @@ func translateUserError(err error) error {
 	if pgError, ok := errors.AsType[*pq.Error](err); ok {
 		switch pgError.Code {
 		case pgUniqueViolation:
-			return ErrEmailAlreadyExists
+			return domain.ErrEmailAlreadyExists
 		case pgInvalidTextRepresent:
-			return ErrInvalidUserID
+			return domain.ErrInvalidUserID
 		}
 	}
 	return err
@@ -50,7 +41,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 // Create insere o usuário e preenche ID e CreatedAt com os valores gerados pelo banco.
-func (userRepository *UserRepository) Create(user *models.User) error {
+func (userRepository *UserRepository) Create(user *domain.User) error {
 	err := userRepository.db.QueryRow(
 		`INSERT INTO users (name, email, password, role)
 		 VALUES ($1, $2, $3, $4)
@@ -62,7 +53,7 @@ func (userRepository *UserRepository) Create(user *models.User) error {
 
 // CreateIfEmailMissing insere o usuário, a menos que o e-mail já esteja em uso.
 // Devolve true quando criou e false quando o e-mail já existia, sem alterar o registro existente.
-func (userRepository *UserRepository) CreateIfEmailMissing(user *models.User) (bool, error) {
+func (userRepository *UserRepository) CreateIfEmailMissing(user *domain.User) (bool, error) {
 	err := userRepository.db.QueryRow(
 		`INSERT INTO users (name, email, password, role)
 		 VALUES ($1, $2, $3, $4)
@@ -81,7 +72,7 @@ func (userRepository *UserRepository) CreateIfEmailMissing(user *models.User) (b
 }
 
 // List devolve todos os usuários, do mais novo para o mais antigo.
-func (userRepository *UserRepository) List() ([]models.User, error) {
+func (userRepository *UserRepository) List() ([]domain.User, error) {
 	rows, err := userRepository.db.Query(
 		`SELECT id, name, email, created_at, role
 		 FROM users
@@ -96,9 +87,9 @@ func (userRepository *UserRepository) List() ([]models.User, error) {
 		}
 	}()
 
-	users := []models.User{}
+	users := []domain.User{}
 	for rows.Next() {
-		var user models.User
+		var user domain.User
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role); err != nil {
 			return nil, err
 		}
@@ -109,9 +100,9 @@ func (userRepository *UserRepository) List() ([]models.User, error) {
 }
 
 // FindByEmail devolve o usuário com o e-mail informado, incluindo o hash da senha.
-// Devolve ErrUserNotFound quando nenhum usuário usa esse e-mail.
-func (userRepository *UserRepository) FindByEmail(email string) (*models.User, error) {
-	var user models.User
+// Devolve domain.ErrUserNotFound quando nenhum usuário usa esse e-mail.
+func (userRepository *UserRepository) FindByEmail(email string) (*domain.User, error) {
+	var user domain.User
 
 	err := userRepository.db.QueryRow(
 		`SELECT id, name, email, password, created_at, role
@@ -120,7 +111,7 @@ func (userRepository *UserRepository) FindByEmail(email string) (*models.User, e
 		email,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.Role)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -131,8 +122,8 @@ func (userRepository *UserRepository) FindByEmail(email string) (*models.User, e
 
 // Update altera nome, e-mail e senha do usuário e preenche CreatedAt e Role com os valores do banco.
 // O papel nunca é alterado aqui; para isso existe UpdateRole.
-// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
-func (userRepository *UserRepository) Update(user *models.User) error {
+// Devolve domain.ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) Update(user *domain.User) error {
 	err := userRepository.db.QueryRow(
 		`UPDATE users
 		 SET name = $1, email = $2, password = $3
@@ -141,15 +132,15 @@ func (userRepository *UserRepository) Update(user *models.User) error {
 		user.Name, user.Email, user.Password, user.ID,
 	).Scan(&user.CreatedAt, &user.Role)
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrUserNotFound
+		return domain.ErrUserNotFound
 	}
 	return translateUserError(err)
 }
 
 // Patch altera só os campos não nulos de patch e devolve o registro atualizado, sem a senha.
-// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
-func (userRepository *UserRepository) Patch(userID string, patch models.UserPatch) (*models.User, error) {
-	var user models.User
+// Devolve domain.ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) Patch(userID string, patch domain.UserPatch) (*domain.User, error) {
+	var user domain.User
 
 	err := userRepository.db.QueryRow(
 		`UPDATE users
@@ -161,7 +152,7 @@ func (userRepository *UserRepository) Patch(userID string, patch models.UserPatc
 		patch.Name, patch.Email, patch.Password, userID,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	if err != nil {
 		return nil, translateUserError(err)
@@ -171,9 +162,9 @@ func (userRepository *UserRepository) Patch(userID string, patch models.UserPatc
 }
 
 // UpdateRole altera o papel do usuário e devolve o registro atualizado, sem a senha.
-// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
-func (userRepository *UserRepository) UpdateRole(userID, role string) (*models.User, error) {
-	var user models.User
+// Devolve domain.ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) UpdateRole(userID, role string) (*domain.User, error) {
+	var user domain.User
 
 	err := userRepository.db.QueryRow(
 		`UPDATE users
@@ -183,7 +174,7 @@ func (userRepository *UserRepository) UpdateRole(userID, role string) (*models.U
 		role, userID,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	if err != nil {
 		return nil, translateUserError(err)
@@ -193,18 +184,18 @@ func (userRepository *UserRepository) UpdateRole(userID, role string) (*models.U
 }
 
 // Delete apaga o usuário e devolve o registro removido.
-// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
-func (userRepository *UserRepository) Delete(userID string) (*models.User, error) {
+// Devolve domain.ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) Delete(userID string) (*domain.User, error) {
 	return deleteReturning(
 		userRepository.db,
 		`DELETE FROM users
 		 WHERE id = $1
 		 RETURNING id, name, email, created_at, role`,
 		userID,
-		func(row *sql.Row, user *models.User) error {
+		func(row *sql.Row, user *domain.User) error {
 			return row.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role)
 		},
-		ErrUserNotFound,
+		domain.ErrUserNotFound,
 		translateUserError,
 	)
 }

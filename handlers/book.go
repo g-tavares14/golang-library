@@ -6,16 +6,15 @@ import (
 	"log"
 	"net/http"
 
-	"go-lang/models"
-	"go-lang/repository"
+	"go-lang/internal/domain"
 )
 
 // BookStore é o acesso a livros de que o BookHandler precisa. O *repository.BookRepository a satisfaz.
 type BookStore interface {
-	Create(book *models.Book) error
-	List() ([]models.Book, error)
-	Update(book *models.Book) error
-	Delete(bookID string) (*models.Book, error)
+	Create(book *domain.Book) error
+	List() ([]domain.Book, error)
+	Update(book *domain.Book) error
+	Delete(bookID string) (*domain.Book, error)
 }
 
 // BookHandler atende as rotas HTTP de livros.
@@ -39,7 +38,7 @@ func (bookHandler *BookHandler) RegisterRoutes(serveMux *http.ServeMux, guard *G
 
 // Create trata POST /books.
 func (bookHandler *BookHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
-	var book models.Book
+	var book domain.Book
 
 	err := json.NewDecoder(request.Body).Decode(&book)
 	if err != nil {
@@ -76,7 +75,7 @@ func (bookHandler *BookHandler) List(responseWriter http.ResponseWriter, _ *http
 
 // Update trata PUT /books/{id}.
 func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
-	var book models.Book
+	var book domain.Book
 
 	err := json.NewDecoder(request.Body).Decode(&book)
 	if err != nil {
@@ -93,11 +92,11 @@ func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, reque
 
 	err = bookHandler.bookRepository.Update(&book)
 	if err != nil {
-		if errors.Is(err, repository.ErrBookNotFound) {
+		if errors.Is(err, domain.ErrBookNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "book not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidBookID) {
+		if errors.Is(err, domain.ErrInvalidBookID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid book id")
 			return
 		}
@@ -113,11 +112,11 @@ func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, reque
 func (bookHandler *BookHandler) Delete(responseWriter http.ResponseWriter, request *http.Request) {
 	book, err := bookHandler.bookRepository.Delete(request.PathValue("id"))
 	if err != nil {
-		if errors.Is(err, repository.ErrBookNotFound) {
+		if errors.Is(err, domain.ErrBookNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "book not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidBookID) {
+		if errors.Is(err, domain.ErrInvalidBookID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid book id")
 			return
 		}

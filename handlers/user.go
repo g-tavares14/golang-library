@@ -7,18 +7,17 @@ import (
 	"net/http"
 
 	"go-lang/auth"
-	"go-lang/models"
-	"go-lang/repository"
+	"go-lang/internal/domain"
 )
 
 // UserStore é o acesso a usuários de que o UserHandler precisa. O *repository.UserRepository a satisfaz.
 type UserStore interface {
-	Create(user *models.User) error
-	List() ([]models.User, error)
-	Update(user *models.User) error
-	Patch(userID string, patch models.UserPatch) (*models.User, error)
-	UpdateRole(userID, role string) (*models.User, error)
-	Delete(userID string) (*models.User, error)
+	Create(user *domain.User) error
+	List() ([]domain.User, error)
+	Update(user *domain.User) error
+	Patch(userID string, patch domain.UserPatch) (*domain.User, error)
+	UpdateRole(userID, role string) (*domain.User, error)
+	Delete(userID string) (*domain.User, error)
 }
 
 // UserHandler atende as rotas HTTP de usuários.
@@ -65,7 +64,7 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 	}
 
 	// O cadastro é público: o papel é decidido pelo servidor, nunca pelo cliente.
-	user.Role = models.RoleUser
+	user.Role = domain.RoleUser
 
 	passwordHash, err := auth.HashPassword(user.Password)
 	if err != nil {
@@ -81,7 +80,7 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 
 	err = userHandler.userRepository.Create(&user)
 	if err != nil {
-		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+		if errors.Is(err, domain.ErrEmailAlreadyExists) {
 			writeError(responseWriter, http.StatusConflict, "email already exists")
 			return
 		}
@@ -148,15 +147,15 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 
 	err = userHandler.userRepository.Update(&user)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "user not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidUserID) {
+		if errors.Is(err, domain.ErrInvalidUserID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
 			return
 		}
-		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+		if errors.Is(err, domain.ErrEmailAlreadyExists) {
 			writeError(responseWriter, http.StatusConflict, "email already exists")
 			return
 		}
@@ -220,15 +219,15 @@ func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, reques
 
 	user, err := userHandler.userRepository.Patch(request.PathValue("id"), patch)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "user not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidUserID) {
+		if errors.Is(err, domain.ErrInvalidUserID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
 			return
 		}
-		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+		if errors.Is(err, domain.ErrEmailAlreadyExists) {
 			writeError(responseWriter, http.StatusConflict, "email already exists")
 			return
 		}
@@ -244,11 +243,11 @@ func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, reques
 func (userHandler *UserHandler) Delete(responseWriter http.ResponseWriter, request *http.Request) {
 	user, err := userHandler.userRepository.Delete(request.PathValue("id"))
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "user not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidUserID) {
+		if errors.Is(err, domain.ErrInvalidUserID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
 			return
 		}
@@ -271,7 +270,7 @@ func (userHandler *UserHandler) UpdateRole(responseWriter http.ResponseWriter, r
 		return
 	}
 
-	if !models.IsValidRole(input.Role) {
+	if !domain.IsValidRole(input.Role) {
 		writeError(responseWriter, http.StatusBadRequest, "invalid role")
 		return
 	}
@@ -286,11 +285,11 @@ func (userHandler *UserHandler) UpdateRole(responseWriter http.ResponseWriter, r
 
 	user, err := userHandler.userRepository.UpdateRole(userID, input.Role)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			writeError(responseWriter, http.StatusNotFound, "user not found")
 			return
 		}
-		if errors.Is(err, repository.ErrInvalidUserID) {
+		if errors.Is(err, domain.ErrInvalidUserID) {
 			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
 			return
 		}

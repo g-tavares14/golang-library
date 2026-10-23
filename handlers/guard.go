@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"go-lang/auth"
-	"go-lang/models"
+	"go-lang/internal/domain"
 )
 
 // claimsContextKey é a chave sob a qual o Guard guarda os dados do token no contexto da requisição.
@@ -42,7 +42,7 @@ func (guard *Guard) RequireLogin(next http.HandlerFunc) http.HandlerFunc {
 func (guard *Guard) RequireAdmin(next http.HandlerFunc) http.HandlerFunc {
 	return guard.RequireLogin(func(responseWriter http.ResponseWriter, request *http.Request) {
 		claims, _ := claimsFromContext(request.Context())
-		if claims.Role != models.RoleAdmin {
+		if claims.Role != domain.RoleAdmin {
 			writeError(responseWriter, http.StatusForbidden, "admin role required")
 			return
 		}

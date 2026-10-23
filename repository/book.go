@@ -7,21 +7,14 @@ import (
 
 	"github.com/lib/pq"
 
-	"go-lang/models"
-)
-
-var (
-	// ErrBookNotFound é devolvido quando nenhum livro tem o id pedido.
-	ErrBookNotFound = errors.New("book not found")
-	// ErrInvalidBookID é devolvido quando o id informado não é um UUID válido.
-	ErrInvalidBookID = errors.New("invalid book id")
+	"go-lang/internal/domain"
 )
 
 // translateBookError converte erros do Postgres em erros do domínio.
 // Qualquer outro erro é devolvido sem alteração.
 func translateBookError(err error) error {
 	if pgError, ok := errors.AsType[*pq.Error](err); ok && pgError.Code == pgInvalidTextRepresent {
-		return ErrInvalidBookID
+		return domain.ErrInvalidBookID
 	}
 	return err
 }
@@ -37,7 +30,7 @@ func NewBookRepository(db *sql.DB) *BookRepository {
 }
 
 // Create insere o livro e preenche ID e CreatedAt com os valores gerados pelo banco.
-func (bookRepository *BookRepository) Create(book *models.Book) error {
+func (bookRepository *BookRepository) Create(book *domain.Book) error {
 	return bookRepository.db.QueryRow(
 		`INSERT INTO books (title, description, author)
 		 VALUES ($1, $2, $3)
@@ -47,7 +40,7 @@ func (bookRepository *BookRepository) Create(book *models.Book) error {
 }
 
 // List devolve todos os livros, do mais novo para o mais antigo.
-func (bookRepository *BookRepository) List() ([]models.Book, error) {
+func (bookRepository *BookRepository) List() ([]domain.Book, error) {
 	rows, err := bookRepository.db.Query(
 		`SELECT id, title, description, author, created_at
 		 FROM books
@@ -62,9 +55,9 @@ func (bookRepository *BookRepository) List() ([]models.Book, error) {
 		}
 	}()
 
-	books := []models.Book{}
+	books := []domain.Book{}
 	for rows.Next() {
-		var book models.Book
+		var book domain.Book
 		if err := rows.Scan(&book.ID, &book.Title, &book.Description, &book.Author, &book.CreatedAt); err != nil {
 			return nil, err
 		}
@@ -75,8 +68,8 @@ func (bookRepository *BookRepository) List() ([]models.Book, error) {
 }
 
 // Update altera o livro e preenche CreatedAt com o valor que está no banco.
-// Devolve ErrBookNotFound quando nenhum livro tem o id informado.
-func (bookRepository *BookRepository) Update(book *models.Book) error {
+// Devolve domain.ErrBookNotFound quando nenhum livro tem o id informado.
+func (bookRepository *BookRepository) Update(book *domain.Book) error {
 	err := bookRepository.db.QueryRow(
 		`UPDATE books
 		 SET title = $1, description = $2, author = $3
@@ -85,24 +78,24 @@ func (bookRepository *BookRepository) Update(book *models.Book) error {
 		book.Title, book.Description, book.Author, book.ID,
 	).Scan(&book.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrBookNotFound
+		return domain.ErrBookNotFound
 	}
 	return translateBookError(err)
 }
 
 // Delete apaga o livro e devolve o registro removido.
-// Devolve ErrBookNotFound quando nenhum livro tem o id informado.
-func (bookRepository *BookRepository) Delete(bookID string) (*models.Book, error) {
+// Devolve domain.ErrBookNotFound quando nenhum livro tem o id informado.
+func (bookRepository *BookRepository) Delete(bookID string) (*domain.Book, error) {
 	return deleteReturning(
 		bookRepository.db,
 		`DELETE FROM books
 		 WHERE id = $1
 		 RETURNING id, title, description, author, created_at`,
 		bookID,
-		func(row *sql.Row, book *models.Book) error {
+		func(row *sql.Row, book *domain.Book) error {
 			return row.Scan(&book.ID, &book.Title, &book.Description, &book.Author, &book.CreatedAt)
 		},
-		ErrBookNotFound,
+		domain.ErrBookNotFound,
 		translateBookError,
 	)
 }

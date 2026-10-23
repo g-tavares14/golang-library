@@ -1,4 +1,4 @@
-package models
+package domain
 
 // Papéis aceitos para um usuário.
 const (

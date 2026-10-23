@@ -11,27 +11,26 @@ import (
 
 	"go-lang/auth"
 	"go-lang/handlers"
-	"go-lang/models"
-	"go-lang/repository"
+	"go-lang/internal/domain"
 )
 
 var testSecret = []byte("0123456789012345678901234567890123456789")
 
 // fakeUserStore é um UserStore e UserFinder em memória.
 type fakeUserStore struct {
-	users  map[string]*models.User
+	users  map[string]*domain.User
 	nextID int
 }
 
 func newFakeUserStore() *fakeUserStore {
-	return &fakeUserStore{users: map[string]*models.User{}}
+	return &fakeUserStore{users: map[string]*domain.User{}}
 }
 
 // add insere um usuário já pronto (com o hash da senha) e devolve o id.
 func (store *fakeUserStore) add(name, email, passwordHash, role string) string {
 	store.nextID++
 	id := strconv.Itoa(store.nextID)
-	store.users[id] = &models.User{
+	store.users[id] = &domain.User{
 		ID: id, Name: name, Email: email, Password: passwordHash, Role: role, CreatedAt: time.Now(),
 	}
 	return id
@@ -46,53 +45,53 @@ func (store *fakeUserStore) emailTaken(email, exceptID string) bool {
 	return false
 }
 
-func (store *fakeUserStore) Create(user *models.User) error {
+func (store *fakeUserStore) Create(user *domain.User) error {
 	if store.emailTaken(user.Email, "") {
-		return repository.ErrEmailAlreadyExists
+		return domain.ErrEmailAlreadyExists
 	}
 	user.ID = store.add(user.Name, user.Email, user.Password, user.Role)
 	user.CreatedAt = store.users[user.ID].CreatedAt
 	return nil
 }
 
-func (store *fakeUserStore) List() ([]models.User, error) {
-	users := []models.User{}
+func (store *fakeUserStore) List() ([]domain.User, error) {
+	users := []domain.User{}
 	for _, user := range store.users {
 		users = append(users, *user)
 	}
 	return users, nil
 }
 
-func (store *fakeUserStore) FindByEmail(email string) (*models.User, error) {
+func (store *fakeUserStore) FindByEmail(email string) (*domain.User, error) {
 	for _, user := range store.users {
 		if user.Email == email {
 			found := *user
 			return &found, nil
 		}
 	}
-	return nil, repository.ErrUserNotFound
+	return nil, domain.ErrUserNotFound
 }
 
-func (store *fakeUserStore) Update(user *models.User) error {
+func (store *fakeUserStore) Update(user *domain.User) error {
 	stored, ok := store.users[user.ID]
 	if !ok {
-		return repository.ErrUserNotFound
+		return domain.ErrUserNotFound
 	}
 	if store.emailTaken(user.Email, user.ID) {
-		return repository.ErrEmailAlreadyExists
+		return domain.ErrEmailAlreadyExists
 	}
 	stored.Name, stored.Email, stored.Password = user.Name, user.Email, user.Password
 	user.CreatedAt, user.Role = stored.CreatedAt, stored.Role
 	return nil
 }
 
-func (store *fakeUserStore) Patch(userID string, patch models.UserPatch) (*models.User, error) {
+func (store *fakeUserStore) Patch(userID string, patch domain.UserPatch) (*domain.User, error) {
 	stored, ok := store.users[userID]
 	if !ok {
-		return nil, repository.ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	if patch.Email != nil && store.emailTaken(*patch.Email, userID) {
-		return nil, repository.ErrEmailAlreadyExists
+		return nil, domain.ErrEmailAlreadyExists
 	}
 	if patch.Name != nil {
 		stored.Name = *patch.Name
@@ -107,20 +106,20 @@ func (store *fakeUserStore) Patch(userID string, patch models.UserPatch) (*model
 	return &updated, nil
 }
 
-func (store *fakeUserStore) UpdateRole(userID, role string) (*models.User, error) {
+func (store *fakeUserStore) UpdateRole(userID, role string) (*domain.User, error) {
 	stored, ok := store.users[userID]
 	if !ok {
-		return nil, repository.ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	stored.Role = role
 	updated := *stored
 	return &updated, nil
 }
 
-func (store *fakeUserStore) Delete(userID string) (*models.User, error) {
+func (store *fakeUserStore) Delete(userID string) (*domain.User, error) {
 	stored, ok := store.users[userID]
 	if !ok {
-		return nil, repository.ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	delete(store.users, userID)
 	return stored, nil
@@ -128,15 +127,15 @@ func (store *fakeUserStore) Delete(userID string) (*models.User, error) {
 
 // fakeBookStore é um BookStore em memória.
 type fakeBookStore struct {
-	books  map[string]*models.Book
+	books  map[string]*domain.Book
 	nextID int
 }
 
 func newFakeBookStore() *fakeBookStore {
-	return &fakeBookStore{books: map[string]*models.Book{}}
+	return &fakeBookStore{books: map[string]*domain.Book{}}
 }
 
-func (store *fakeBookStore) Create(book *models.Book) error {
+func (store *fakeBookStore) Create(book *domain.Book) error {
 	store.nextID++
 	book.ID = strconv.Itoa(store.nextID)
 	book.CreatedAt = time.Now()
@@ -145,28 +144,28 @@ func (store *fakeBookStore) Create(book *models.Book) error {
 	return nil
 }
 
-func (store *fakeBookStore) List() ([]models.Book, error) {
-	books := []models.Book{}
+func (store *fakeBookStore) List() ([]domain.Book, error) {
+	books := []domain.Book{}
 	for _, book := range store.books {
 		books = append(books, *book)
 	}
 	return books, nil
 }
 
-func (store *fakeBookStore) Update(book *models.Book) error {
+func (store *fakeBookStore) Update(book *domain.Book) error {
 	stored, ok := store.books[book.ID]
 	if !ok {
-		return repository.ErrBookNotFound
+		return domain.ErrBookNotFound
 	}
 	stored.Title, stored.Description, stored.Author = book.Title, book.Description, book.Author
 	book.CreatedAt = stored.CreatedAt
 	return nil
 }
 
-func (store *fakeBookStore) Delete(bookID string) (*models.Book, error) {
+func (store *fakeBookStore) Delete(bookID string) (*domain.Book, error) {
 	stored, ok := store.books[bookID]
 	if !ok {
-		return nil, repository.ErrBookNotFound
+		return nil, domain.ErrBookNotFound
 	}
 	delete(store.books, bookID)
 	return stored, nil
@@ -200,10 +199,10 @@ func newTestApp(t *testing.T) *testApp {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
 
-	app.adminID = app.users.add("Admin", "admin@example.com", passwordHash, models.RoleAdmin)
-	app.memberID = app.users.add("Maria", "maria@example.com", passwordHash, models.RoleUser)
-	app.adminToken = app.issueToken(t, app.adminID, models.RoleAdmin)
-	app.memberToken = app.issueToken(t, app.memberID, models.RoleUser)
+	app.adminID = app.users.add("Admin", "admin@example.com", passwordHash, domain.RoleAdmin)
+	app.memberID = app.users.add("Maria", "maria@example.com", passwordHash, domain.RoleUser)
+	app.adminToken = app.issueToken(t, app.adminID, domain.RoleAdmin)
+	app.memberToken = app.issueToken(t, app.memberID, domain.RoleUser)
 
 	guard := handlers.NewGuard(app.tokenManager)
 	handlers.NewBookHandler(app.books).RegisterRoutes(app.mux, guard)

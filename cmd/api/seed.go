@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"go-lang/auth"
-	"go-lang/models"
+	"go-lang/internal/domain"
 	"go-lang/repository"
 )
 
@@ -30,7 +30,7 @@ func seedAdmin(userRepository *repository.UserRepository) error {
 		return fmt.Errorf("hash admin password: %w", err)
 	}
 
-	admin := models.User{Name: "Admin", Email: email, Password: passwordHash, Role: models.RoleAdmin}
+	admin := domain.User{Name: "Admin", Email: email, Password: passwordHash, Role: domain.RoleAdmin}
 
 	created, err := userRepository.CreateIfEmailMissing(&admin)
 	if err != nil {

@@ -7,13 +7,12 @@ import (
 	"net/http"
 
 	"go-lang/auth"
-	"go-lang/models"
-	"go-lang/repository"
+	"go-lang/internal/domain"
 )
 
 // UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *repository.UserRepository a satisfaz.
 type UserFinder interface {
-	FindByEmail(email string) (*models.User, error)
+	FindByEmail(email string) (*domain.User, error)
 }
 
 // AuthHandler atende a rota de login.
@@ -60,7 +59,7 @@ func (authHandler *AuthHandler) Login(responseWriter http.ResponseWriter, reques
 
 	user, err := authHandler.userRepository.FindByEmail(input.Email)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			auth.SpendPasswordCheck(input.Password)
 			writeError(responseWriter, http.StatusUnauthorized, "invalid credentials")
 			return
