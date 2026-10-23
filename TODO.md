@@ -20,7 +20,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 ## 🟢 3. Projeto e ferramentas
 
-- [ ] **Testes.** Não existe nenhum `*_test.go`. Começar pelos handlers com `httptest` e pelos repositories contra um Postgres de teste.
+- [x] **Testes.** Não existe nenhum `*_test.go`. Feito: handlers com `httptest` e `auth` rodam sempre; os testes de `repository` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
 - [ ] **README** com: subir o banco (`docker compose up -d db`), rodar migrations (`docker compose run --rm migrate up`), copiar o `.env.example`, rodar (`go run .`) e a lista de endpoints.
 - [ ] **CI no GitHub Actions** rodando `go build ./...`, `golangci-lint fmt --diff ./...` e `golangci-lint run ./...` a cada push.
 - [ ] **Arquivo `.http`** no repositório documentando as rotas (criar, listar, atualizar, apagar) para testar pelo GoLand.
