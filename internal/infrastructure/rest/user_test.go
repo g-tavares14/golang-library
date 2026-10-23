@@ -68,7 +68,7 @@ func TestCreateUserErrors(t *testing.T) {
 		{"sem senha", `{"name":"Ana","email":"ana@example.com"}`, http.StatusBadRequest},
 		{"JSON inválido", `{`, http.StatusBadRequest},
 		{"senha acima de 72 bytes", `{"name":"Ana","email":"ana@example.com","password":"` +
-			strings.Repeat("a", 73) + `"}`, http.StatusBadRequest},
+			"Aa1" + strings.Repeat("a", 70) + `"}`, http.StatusBadRequest},
 		{"e-mail repetido", `{"name":"Outra","email":"maria@example.com","password":"Senha-longa-1"}`, http.StatusConflict},
 	}
 
@@ -77,6 +77,19 @@ func TestCreateUserErrors(t *testing.T) {
 			app := newTestApp(t)
 			assertStatus(t, app.do("POST", "/users", "", test.body), test.want)
 		})
+	}
+}
+
+func TestCreateUserPasswordTooLongIsNotReportedAsWeak(t *testing.T) {
+	app := newTestApp(t)
+
+	// Senha forte (passa na política), mas com 73 bytes: só o limite do bcrypt a barra.
+	body := `{"name":"Ana","email":"ana@example.com","password":"Aa1` + strings.Repeat("a", 70) + `"}`
+	recorder := app.do("POST", "/users", "", body)
+	assertStatus(t, recorder, http.StatusBadRequest)
+
+	if got := decode(t, recorder)["error"]; got != "password is too long" {
+		t.Errorf("error = %v, want %q", got, "password is too long")
 	}
 }
 
