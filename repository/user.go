@@ -129,16 +129,17 @@ func (userRepository *UserRepository) FindByEmail(email string) (*models.User, e
 	return &user, nil
 }
 
-// Update altera o usuário e preenche CreatedAt com o valor que está no banco.
+// Update altera nome, e-mail e senha do usuário e preenche CreatedAt e Role com os valores do banco.
+// O papel nunca é alterado aqui; para isso existe UpdateRole.
 // Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
 func (userRepository *UserRepository) Update(user *models.User) error {
 	err := userRepository.db.QueryRow(
 		`UPDATE users
-		 SET name = $1, email = $2, password = $3, role = $4
-		 WHERE id = $5
-		 RETURNING created_at`,
-		user.Name, user.Email, user.Password, user.Role, user.ID,
-	).Scan(&user.CreatedAt)
+		 SET name = $1, email = $2, password = $3
+		 WHERE id = $4
+		 RETURNING created_at, role`,
+		user.Name, user.Email, user.Password, user.ID,
+	).Scan(&user.CreatedAt, &user.Role)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrUserNotFound
 	}

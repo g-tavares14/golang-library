@@ -21,11 +21,12 @@ func NewBookHandler(bookRepository *repository.BookRepository) *BookHandler {
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
-func (bookHandler *BookHandler) RegisterRoutes(serveMux *http.ServeMux) {
-	serveMux.HandleFunc("POST /books", bookHandler.Create)
-	serveMux.HandleFunc("GET /books", bookHandler.List)
-	serveMux.HandleFunc("PUT /books/{id}", bookHandler.Update)
-	serveMux.HandleFunc("DELETE /books/{id}", bookHandler.Delete)
+// Listar exige login; criar, alterar e apagar exigem admin.
+func (bookHandler *BookHandler) RegisterRoutes(serveMux *http.ServeMux, guard *Guard) {
+	serveMux.HandleFunc("POST /books", guard.RequireAdmin(bookHandler.Create))
+	serveMux.HandleFunc("GET /books", guard.RequireLogin(bookHandler.List))
+	serveMux.HandleFunc("PUT /books/{id}", guard.RequireAdmin(bookHandler.Update))
+	serveMux.HandleFunc("DELETE /books/{id}", guard.RequireAdmin(bookHandler.Delete))
 }
 
 // Create trata POST /books.

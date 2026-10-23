@@ -22,11 +22,12 @@ func NewUserHandler(userRepository *repository.UserRepository) *UserHandler {
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
-func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux) {
+// O cadastro é público; listar exige login; alterar e apagar exigem admin.
+func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux, guard *Guard) {
 	serveMux.HandleFunc("POST /users", userHandler.Create)
-	serveMux.HandleFunc("GET /users", userHandler.List)
-	serveMux.HandleFunc("PUT /users/{id}", userHandler.Update)
-	serveMux.HandleFunc("DELETE /users/{id}", userHandler.Delete)
+	serveMux.HandleFunc("GET /users", guard.RequireLogin(userHandler.List))
+	serveMux.HandleFunc("PUT /users/{id}", guard.RequireAdmin(userHandler.Update))
+	serveMux.HandleFunc("DELETE /users/{id}", guard.RequireAdmin(userHandler.Delete))
 }
 
 // Create trata POST /users.
@@ -106,11 +107,6 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 
 	if user.Name == "" || user.Email == "" || user.Password == "" {
 		writeError(responseWriter, http.StatusBadRequest, "user name, email or password is empty")
-		return
-	}
-
-	if user.Role != models.RoleAdmin {
-		writeError(responseWriter, http.StatusForbidden, "only admin can update users")
 		return
 	}
 

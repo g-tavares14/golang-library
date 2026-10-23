@@ -7,12 +7,12 @@ import (
 )
 
 // userInput é o corpo JSON aceito ao criar ou atualizar um usuário.
-// É separado de models.User para que o cliente só controle os campos permitidos.
+// É separado de models.User para que o cliente só controle os campos permitidos:
+// o papel (role) nunca vem do corpo da requisição.
 type userInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role"`
 }
 
 // toUser converte a entrada para o modelo usado pelo repository.
@@ -21,7 +21,6 @@ func (input userInput) toUser() models.User {
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
-		Role:     input.Role,
 	}
 }
 

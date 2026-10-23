@@ -49,10 +49,11 @@ func run() error {
 	bookHandler := handlers.NewBookHandler(bookRepository)
 	userHandler := handlers.NewUserHandler(userRepository)
 	authHandler := handlers.NewAuthHandler(userRepository, tokenManager)
+	guard := handlers.NewGuard(tokenManager)
 
 	serveMux := http.NewServeMux()
-	bookHandler.RegisterRoutes(serveMux)
-	userHandler.RegisterRoutes(serveMux)
+	bookHandler.RegisterRoutes(serveMux, guard)
+	userHandler.RegisterRoutes(serveMux, guard)
 	authHandler.RegisterRoutes(serveMux)
 
 	server := &http.Server{
