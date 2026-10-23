@@ -1,0 +1,96 @@
+### Requisições da API para o GoLand (ou qualquer cliente compatível com arquivos .http).
+### Rode primeiro o login: o token fica guardado e as demais requisições o usam.
+
+@baseUrl = http://localhost:8080
+# Use os valores de ADMIN_EMAIL e ADMIN_PASSWORD do seu .env
+@adminEmail = admin@example.com
+@adminPassword = change-me-too
+
+### Login (guarda o token em {{token}})
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {%
+    client.global.set("token", response.body.token);
+%}
+
+### Cadastro público (sempre cria um usuário com papel "user")
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Maria",
+  "email": "maria@example.com",
+  "password": "senha-longa-1"
+}
+
+### Listar usuários (exige login)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Substituir um usuário (admin; troque o id)
+PUT {{baseUrl}}/users/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Maria Silva",
+  "email": "maria@example.com",
+  "password": "nova-senha-1"
+}
+
+### Alterar só alguns campos de um usuário (admin; troque o id)
+PATCH {{baseUrl}}/users/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Maria S."
+}
+
+### Promover ou rebaixar um usuário (admin; troque o id)
+PUT {{baseUrl}}/users/00000000-0000-0000-0000-000000000000/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "admin"
+}
+
+### Apagar um usuário (admin; troque o id)
+DELETE {{baseUrl}}/users/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+### Listar livros (exige login)
+GET {{baseUrl}}/books
+Authorization: Bearer {{token}}
+
+### Criar um livro (admin)
+POST {{baseUrl}}/books
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "A Linguagem de Programação Go",
+  "author": "Alan Donovan",
+  "description": "Um clássico sobre Go"
+}
+
+### Alterar um livro (admin; troque o id)
+PUT {{baseUrl}}/books/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Go na Prática",
+  "author": "William Kennedy"
+}
+
+### Apagar um livro (admin; troque o id)
+DELETE {{baseUrl}}/books/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
