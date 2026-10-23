@@ -9,7 +9,7 @@ import (
 	"go-lang/internal/domain"
 )
 
-// BookStore é o acesso a livros de que o BookHandler precisa. O *repository.BookRepository a satisfaz.
+// BookStore é o acesso a livros de que o BookHandler precisa. O *postgres.BookRepository a satisfaz.
 type BookStore interface {
 	Create(book *domain.Book) error
 	List() ([]domain.Book, error)

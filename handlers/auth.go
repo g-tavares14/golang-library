@@ -10,7 +10,7 @@ import (
 	"go-lang/internal/domain"
 )
 
-// UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *repository.UserRepository a satisfaz.
+// UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *postgres.UserRepository a satisfaz.
 type UserFinder interface {
 	FindByEmail(email string) (*domain.User, error)
 }

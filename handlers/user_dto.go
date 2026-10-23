@@ -15,7 +15,7 @@ type userInput struct {
 	Password string `json:"password"`
 }
 
-// toUser converte a entrada para o modelo usado pelo repository.
+// toUser converte a entrada para o modelo usado pelo postgres.
 func (input userInput) toUser() domain.User {
 	return domain.User{
 		Name:     input.Name,
@@ -31,7 +31,7 @@ type userPatchInput struct {
 	Password *string `json:"password"`
 }
 
-// toPatch converte a entrada para o modelo usado pelo repository.
+// toPatch converte a entrada para o modelo usado pelo postgres.
 func (input userPatchInput) toPatch() domain.UserPatch {
 	return domain.UserPatch{
 		Name:     input.Name,

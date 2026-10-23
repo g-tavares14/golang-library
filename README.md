@@ -64,10 +64,10 @@ golangci-lint run ./...          # lint
 go test ./...                    # auth e handlers rodam sempre
 ```
 
-Os testes de `repository` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:
+Os testes de `postgres` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:
 
 ```bash
-TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" go test ./repository/
+TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" go test ./internal/infrastructure/postgres/
 ```
 
 A CI (`.github/workflows/ci.yml`) roda build, formatação, lint e testes a cada push.

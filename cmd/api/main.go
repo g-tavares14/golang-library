@@ -13,7 +13,7 @@ import (
 	"go-lang/auth"
 	"go-lang/config"
 	"go-lang/handlers"
-	"go-lang/repository"
+	"go-lang/internal/infrastructure/postgres"
 )
 
 const (
@@ -38,8 +38,8 @@ func run() error {
 		}
 	}()
 
-	bookRepository := repository.NewBookRepository(database)
-	userRepository := repository.NewUserRepository(database)
+	bookRepository := postgres.NewBookRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 	if err := seedAdmin(userRepository); err != nil {
 		return err
 	}

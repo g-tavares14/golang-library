@@ -1,4 +1,4 @@
-package repository
+package postgres
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	"go-lang/internal/domain"
 )
 
-// Códigos de erro do Postgres que o repository traduz para erros do domínio.
+// Códigos de erro do Postgres que o postgres traduz para erros do domínio.
 const (
 	pgUniqueViolation      = "23505"
 	pgInvalidTextRepresent = "22P02"

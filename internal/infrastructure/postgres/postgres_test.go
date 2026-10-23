@@ -1,4 +1,4 @@
-package repository_test
+package postgres_test
 
 import (
 	"database/sql"
@@ -11,13 +11,13 @@ import (
 	_ "github.com/lib/pq" // driver do PostgreSQL para o database/sql
 
 	"go-lang/internal/domain"
-	"go-lang/repository"
+	"go-lang/internal/infrastructure/postgres"
 )
 
 // openTestDB conecta ao Postgres indicado em TEST_DATABASE_URL, que precisa ter as migrations aplicadas.
 // Sem a variável, o teste é pulado. Exemplo:
 //
-//	TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang sslmode=disable" go test ./repository/
+//	TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang sslmode=disable" go test ./internal/infrastructure/postgres/
 func openTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -49,7 +49,7 @@ func newTestUser(t *testing.T, database *sql.DB, role string) *domain.User {
 	t.Helper()
 
 	user := &domain.User{Name: "Teste", Email: uniqueEmail("user"), Password: "hash", Role: role}
-	if err := repository.NewUserRepository(database).Create(user); err != nil {
+	if err := postgres.NewUserRepository(database).Create(user); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	t.Cleanup(func() { _, _ = database.Exec(`DELETE FROM users WHERE id = $1`, user.ID) })
@@ -59,7 +59,7 @@ func newTestUser(t *testing.T, database *sql.DB, role string) *domain.User {
 
 func TestUserCreateAndFindByEmail(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 
 	created := newTestUser(t, database, domain.RoleUser)
 	if created.ID == "" || created.CreatedAt.IsZero() {
@@ -85,7 +85,7 @@ func TestUserCreateDuplicateEmail(t *testing.T) {
 	existing := newTestUser(t, database, domain.RoleUser)
 
 	duplicate := &domain.User{Name: "Outro", Email: existing.Email, Password: "hash", Role: domain.RoleUser}
-	err := repository.NewUserRepository(database).Create(duplicate)
+	err := postgres.NewUserRepository(database).Create(duplicate)
 	if !errors.Is(err, domain.ErrEmailAlreadyExists) {
 		t.Errorf("Create() error = %v, want ErrEmailAlreadyExists", err)
 	}
@@ -93,7 +93,7 @@ func TestUserCreateDuplicateEmail(t *testing.T) {
 
 func TestUserCreateIfEmailMissing(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 
 	admin := &domain.User{Name: "Admin", Email: uniqueEmail("seed"), Password: "hash", Role: domain.RoleAdmin}
 	t.Cleanup(func() { _, _ = database.Exec(`DELETE FROM users WHERE email = $1`, admin.Email) })
@@ -120,7 +120,7 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 
 func TestUserUpdateKeepsRole(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleAdmin)
 
 	// Role fica vazio de propósito: o Update não pode tocar nele.
@@ -143,7 +143,7 @@ func TestUserUpdateKeepsRole(t *testing.T) {
 
 func TestUserUpdateErrors(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 
 	missing := &domain.User{ID: "00000000-0000-0000-0000-000000000000", Name: "X", Email: uniqueEmail("x"), Password: "h"}
 	if err := userRepository.Update(missing); !errors.Is(err, domain.ErrUserNotFound) {
@@ -165,7 +165,7 @@ func TestUserUpdateErrors(t *testing.T) {
 
 func TestUserPatchChangesOnlySentFields(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
 	newName := "Só o nome"
@@ -193,7 +193,7 @@ func TestUserPatchChangesOnlySentFields(t *testing.T) {
 
 func TestUserUpdateRole(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
 	promoted, err := userRepository.UpdateRole(created.ID, domain.RoleAdmin)
@@ -217,7 +217,7 @@ func TestUserUpdateRole(t *testing.T) {
 
 func TestUserListAndDelete(t *testing.T) {
 	database := openTestDB(t)
-	userRepository := repository.NewUserRepository(database)
+	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
 	users, err := userRepository.List()
@@ -252,7 +252,7 @@ func TestUserListAndDelete(t *testing.T) {
 
 func TestBookLifecycle(t *testing.T) {
 	database := openTestDB(t)
-	bookRepository := repository.NewBookRepository(database)
+	bookRepository := postgres.NewBookRepository(database)
 
 	description := "Clássico"
 	book := &domain.Book{Title: "A Linguagem Go", Author: "Donovan", Description: &description}

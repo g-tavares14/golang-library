@@ -10,7 +10,7 @@ import (
 	"go-lang/internal/domain"
 )
 
-// UserStore é o acesso a usuários de que o UserHandler precisa. O *repository.UserRepository a satisfaz.
+// UserStore é o acesso a usuários de que o UserHandler precisa. O *postgres.UserRepository a satisfaz.
 type UserStore interface {
 	Create(user *domain.User) error
 	List() ([]domain.User, error)

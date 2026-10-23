@@ -8,12 +8,12 @@ import (
 
 	"go-lang/auth"
 	"go-lang/internal/domain"
-	"go-lang/repository"
+	"go-lang/internal/infrastructure/postgres"
 )
 
 // seedAdmin cria o admin inicial a partir de ADMIN_EMAIL e ADMIN_PASSWORD.
 // É idempotente: se o e-mail já existe, não altera nada. Sem ADMIN_EMAIL, não faz nada.
-func seedAdmin(userRepository *repository.UserRepository) error {
+func seedAdmin(userRepository *postgres.UserRepository) error {
 	email := os.Getenv("ADMIN_EMAIL")
 	if email == "" {
 		log.Println("ADMIN_EMAIL is not set, skipping admin seed")
