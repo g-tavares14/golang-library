@@ -10,13 +10,21 @@ import (
 	"go-lang/repository"
 )
 
+// BookStore é o acesso a livros de que o BookHandler precisa. O *repository.BookRepository a satisfaz.
+type BookStore interface {
+	Create(book *models.Book) error
+	List() ([]models.Book, error)
+	Update(book *models.Book) error
+	Delete(bookID string) (*models.Book, error)
+}
+
 // BookHandler atende as rotas HTTP de livros.
 type BookHandler struct {
-	bookRepository *repository.BookRepository
+	bookRepository BookStore
 }
 
 // NewBookHandler cria um BookHandler que usa bookRepository.
-func NewBookHandler(bookRepository *repository.BookRepository) *BookHandler {
+func NewBookHandler(bookRepository BookStore) *BookHandler {
 	return &BookHandler{bookRepository: bookRepository}
 }
 

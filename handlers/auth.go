@@ -7,17 +7,23 @@ import (
 	"net/http"
 
 	"go-lang/auth"
+	"go-lang/models"
 	"go-lang/repository"
 )
 
+// UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *repository.UserRepository a satisfaz.
+type UserFinder interface {
+	FindByEmail(email string) (*models.User, error)
+}
+
 // AuthHandler atende a rota de login.
 type AuthHandler struct {
-	userRepository *repository.UserRepository
+	userRepository UserFinder
 	tokenManager   *auth.TokenManager
 }
 
 // NewAuthHandler cria um AuthHandler que confere as credenciais em userRepository e emite tokens com tokenManager.
-func NewAuthHandler(userRepository *repository.UserRepository, tokenManager *auth.TokenManager) *AuthHandler {
+func NewAuthHandler(userRepository UserFinder, tokenManager *auth.TokenManager) *AuthHandler {
 	return &AuthHandler{userRepository: userRepository, tokenManager: tokenManager}
 }
 

@@ -11,13 +11,23 @@ import (
 	"go-lang/repository"
 )
 
+// UserStore é o acesso a usuários de que o UserHandler precisa. O *repository.UserRepository a satisfaz.
+type UserStore interface {
+	Create(user *models.User) error
+	List() ([]models.User, error)
+	Update(user *models.User) error
+	Patch(userID string, patch models.UserPatch) (*models.User, error)
+	UpdateRole(userID, role string) (*models.User, error)
+	Delete(userID string) (*models.User, error)
+}
+
 // UserHandler atende as rotas HTTP de usuários.
 type UserHandler struct {
-	userRepository *repository.UserRepository
+	userRepository UserStore
 }
 
 // NewUserHandler cria um UserHandler que usa userRepository.
-func NewUserHandler(userRepository *repository.UserRepository) *UserHandler {
+func NewUserHandler(userRepository UserStore) *UserHandler {
 	return &UserHandler{userRepository: userRepository}
 }
 
