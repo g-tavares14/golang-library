@@ -24,6 +24,11 @@ func (input userInput) toUser() models.User {
 	}
 }
 
+// roleInput é o corpo JSON aceito em PUT /users/{id}/role.
+type roleInput struct {
+	Role string `json:"role"`
+}
+
 // userResponse é o corpo JSON devolvido ao cliente. Nunca inclui a senha.
 type userResponse struct {
 	ID        string    `json:"id"`

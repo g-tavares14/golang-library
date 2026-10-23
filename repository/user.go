@@ -146,6 +146,28 @@ func (userRepository *UserRepository) Update(user *models.User) error {
 	return translateUserError(err)
 }
 
+// UpdateRole altera o papel do usuário e devolve o registro atualizado, sem a senha.
+// Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
+func (userRepository *UserRepository) UpdateRole(userID, role string) (*models.User, error) {
+	var user models.User
+
+	err := userRepository.db.QueryRow(
+		`UPDATE users
+		 SET role = $1
+		 WHERE id = $2
+		 RETURNING id, name, email, created_at, role`,
+		role, userID,
+	).Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, translateUserError(err)
+	}
+
+	return &user, nil
+}
+
 // Delete apaga o usuário e devolve o registro removido.
 // Devolve ErrUserNotFound quando nenhum usuário tem o id informado.
 func (userRepository *UserRepository) Delete(userID string) (*models.User, error) {

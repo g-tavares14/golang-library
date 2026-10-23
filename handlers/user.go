@@ -22,12 +22,13 @@ func NewUserHandler(userRepository *repository.UserRepository) *UserHandler {
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
-// O cadastro é público; listar exige login; alterar e apagar exigem admin.
+// O cadastro é público; listar exige login; alterar, apagar e mudar o papel exigem admin.
 func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux, guard *Guard) {
 	serveMux.HandleFunc("POST /users", userHandler.Create)
 	serveMux.HandleFunc("GET /users", guard.RequireLogin(userHandler.List))
 	serveMux.HandleFunc("PUT /users/{id}", guard.RequireAdmin(userHandler.Update))
 	serveMux.HandleFunc("DELETE /users/{id}", guard.RequireAdmin(userHandler.Delete))
+	serveMux.HandleFunc("PUT /users/{id}/role", guard.RequireAdmin(userHandler.UpdateRole))
 }
 
 // Create trata POST /users.
@@ -159,6 +160,48 @@ func (userHandler *UserHandler) Delete(responseWriter http.ResponseWriter, reque
 			return
 		}
 		log.Println("delete user:", err)
+		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, newUserResponse(user))
+}
+
+// UpdateRole trata PUT /users/{id}/role, a única forma de promover ou rebaixar um usuário.
+// Um admin não pode mudar o próprio papel, para o sistema não ficar sem admin.
+func (userHandler *UserHandler) UpdateRole(responseWriter http.ResponseWriter, request *http.Request) {
+	var input roleInput
+
+	err := json.NewDecoder(request.Body).Decode(&input)
+	if err != nil {
+		writeError(responseWriter, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if !models.IsValidRole(input.Role) {
+		writeError(responseWriter, http.StatusBadRequest, "invalid role")
+		return
+	}
+
+	userID := request.PathValue("id")
+
+	claims, _ := claimsFromContext(request.Context())
+	if claims.UserID == userID {
+		writeError(responseWriter, http.StatusForbidden, "cannot change your own role")
+		return
+	}
+
+	user, err := userHandler.userRepository.UpdateRole(userID, input.Role)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			writeError(responseWriter, http.StatusNotFound, "user not found")
+			return
+		}
+		if errors.Is(err, repository.ErrInvalidUserID) {
+			writeError(responseWriter, http.StatusBadRequest, "invalid user id")
+			return
+		}
+		log.Println("update user role:", err)
 		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
 		return
 	}
