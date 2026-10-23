@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 
+	"go-lang/auth"
 	"go-lang/repository"
 )
 
@@ -60,6 +61,18 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 		writeError(responseWriter, http.StatusBadRequest, "invalid role")
 		return
 	}
+
+	passwordHash, err := auth.HashPassword(user.Password)
+	if err != nil {
+		if errors.Is(err, auth.ErrPasswordTooLong) {
+			writeError(responseWriter, http.StatusBadRequest, "password is too long")
+			return
+		}
+		log.Println("hash password:", err)
+		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	user.Password = passwordHash
 
 	err = userHandler.userRepository.Create(&user)
 	if err != nil {
@@ -115,6 +128,18 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 	}
 
 	user.ID = request.PathValue("id")
+
+	passwordHash, err := auth.HashPassword(user.Password)
+	if err != nil {
+		if errors.Is(err, auth.ErrPasswordTooLong) {
+			writeError(responseWriter, http.StatusBadRequest, "password is too long")
+			return
+		}
+		log.Println("hash password:", err)
+		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	user.Password = passwordHash
 
 	err = userHandler.userRepository.Update(&user)
 	if err != nil {
