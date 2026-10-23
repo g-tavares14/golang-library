@@ -15,15 +15,6 @@ type userInput struct {
 	Password string `json:"password"`
 }
 
-// toUser converte a entrada para o modelo usado pelo postgres.
-func (input userInput) toUser() domain.User {
-	return domain.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: input.Password,
-	}
-}
-
 // userPatchInput é o corpo JSON aceito em PATCH /users/{id}. Campos ausentes ficam nil e não mudam.
 type userPatchInput struct {
 	Name     *string `json:"name"`
@@ -31,7 +22,7 @@ type userPatchInput struct {
 	Password *string `json:"password"`
 }
 
-// toPatch converte a entrada para o modelo usado pelo postgres.
+// toPatch converte a entrada para a atualização parcial do domínio.
 func (input userPatchInput) toPatch() domain.UserPatch {
 	return domain.UserPatch{
 		Name:     input.Name,

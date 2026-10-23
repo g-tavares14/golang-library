@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"go-lang/internal/application"
 	"go-lang/internal/domain"
 	"go-lang/internal/infrastructure/rest"
 	"go-lang/internal/infrastructure/security"
@@ -52,6 +53,14 @@ func (store *fakeUserStore) Create(user *domain.User) error {
 	user.ID = store.add(user.Name, user.Email, user.Password, user.Role)
 	user.CreatedAt = store.users[user.ID].CreatedAt
 	return nil
+}
+
+func (store *fakeUserStore) CreateIfEmailMissing(user *domain.User) (bool, error) {
+	if store.emailTaken(user.Email, "") {
+		return false, nil
+	}
+	user.ID = store.add(user.Name, user.Email, user.Password, user.Role)
+	return true, nil
 }
 
 func (store *fakeUserStore) List() ([]domain.User, error) {
@@ -194,7 +203,9 @@ func newTestApp(t *testing.T) *testApp {
 		tokenManager: security.NewTokenManager(testSecret, time.Hour),
 	}
 
-	passwordHash, err := security.HashPassword("senha-do-teste")
+	passwordHasher := security.NewPasswordHasher()
+
+	passwordHash, err := passwordHasher.Hash("senha-do-teste")
 	if err != nil {
 		t.Fatalf("HashPassword() error = %v", err)
 	}
@@ -205,9 +216,9 @@ func newTestApp(t *testing.T) *testApp {
 	app.memberToken = app.issueToken(t, app.memberID, domain.RoleUser)
 
 	guard := rest.NewGuard(app.tokenManager)
-	rest.NewBookHandler(app.books).RegisterRoutes(app.mux, guard)
-	rest.NewUserHandler(app.users).RegisterRoutes(app.mux, guard)
-	rest.NewAuthHandler(app.users, app.tokenManager).RegisterRoutes(app.mux)
+	rest.NewBookHandler(application.NewBookService(app.books)).RegisterRoutes(app.mux, guard)
+	rest.NewUserHandler(application.NewUserService(app.users, passwordHasher)).RegisterRoutes(app.mux, guard)
+	rest.NewAuthHandler(application.NewAuthService(app.users, passwordHasher, app.tokenManager)).RegisterRoutes(app.mux)
 
 	return app
 }

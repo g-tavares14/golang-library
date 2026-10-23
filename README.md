@@ -55,13 +55,31 @@ Regras de cadastro: o e-mail precisa ser um endereço simples (até 100 caracter
 
 Os erros vêm como `{"error": "..."}`. Exemplos prontos de cada requisição estão em [requests.http](requests.http), para rodar pelo GoLand.
 
+## Estrutura do projeto
+
+```text
+cmd/api/                       ponto de entrada: monta as peças e sobe o servidor
+internal/
+  domain/                      entidades, regras de negócio, erros e interfaces dos repositórios
+  application/                 casos de uso (services) que orquestram as regras do domain
+  infrastructure/
+    rest/                      camada HTTP: handlers, guard (JWT) e DTOs
+    postgres/                  repositórios com database/sql e tradução dos erros do Postgres
+    security/                  bcrypt e tokens JWT
+    config/                    leitura do .env e conexão com o banco
+deployment/                    docker-compose.yml (Postgres e migrations)
+migrations/                    migrations do Goose
+```
+
+A dependência aponta sempre para dentro: `infrastructure` conhece `application` e `domain`, a `application` conhece só o `domain`, e o `domain` não importa nada do projeto. Regras como "o cadastro público sempre cria `user`" ou "ninguém muda o próprio papel" ficam no `domain`; o HTTP só traduz erros de domínio em status (`rest/errors.go`).
+
 ## Desenvolvimento
 
 ```bash
 go build ./...
 golangci-lint fmt --diff ./...   # formatação
 golangci-lint run ./...          # lint
-go test ./...                    # security e rest rodam sempre
+go test ./...                    # domain, application, rest e security rodam sempre
 ```
 
 Os testes de `postgres` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:

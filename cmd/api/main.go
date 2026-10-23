@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"go-lang/internal/application"
 	"go-lang/internal/infrastructure/config"
 	"go-lang/internal/infrastructure/postgres"
 	"go-lang/internal/infrastructure/rest"
@@ -38,17 +39,25 @@ func run() error {
 		}
 	}()
 
+	// Infraestrutura: acesso ao banco, hash de senha e tokens.
 	bookRepository := postgres.NewBookRepository(database)
 	userRepository := postgres.NewUserRepository(database)
-	if err := seedAdmin(userRepository); err != nil {
+	passwordHasher := security.NewPasswordHasher()
+	tokenManager := security.NewTokenManager(config.JWTSecret(), tokenTTL)
+
+	// Casos de uso.
+	bookService := application.NewBookService(bookRepository)
+	userService := application.NewUserService(userRepository, passwordHasher)
+	authService := application.NewAuthService(userRepository, passwordHasher, tokenManager)
+
+	if err := seedAdmin(userService); err != nil {
 		return err
 	}
 
-	tokenManager := security.NewTokenManager(config.JWTSecret(), tokenTTL)
-
-	bookHandler := rest.NewBookHandler(bookRepository)
-	userHandler := rest.NewUserHandler(userRepository)
-	authHandler := rest.NewAuthHandler(userRepository, tokenManager)
+	// Camada HTTP.
+	bookHandler := rest.NewBookHandler(bookService)
+	userHandler := rest.NewUserHandler(userService)
+	authHandler := rest.NewAuthHandler(authService)
 	guard := rest.NewGuard(tokenManager)
 
 	serveMux := http.NewServeMux()

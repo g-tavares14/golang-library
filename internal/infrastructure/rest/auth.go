@@ -2,28 +2,19 @@ package rest
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 
-	"go-lang/internal/domain"
-	"go-lang/internal/infrastructure/security"
+	"go-lang/internal/application"
 )
-
-// UserFinder é a busca de usuário por e-mail de que o AuthHandler precisa. O *postgres.UserRepository a satisfaz.
-type UserFinder interface {
-	FindByEmail(email string) (*domain.User, error)
-}
 
 // AuthHandler atende a rota de login.
 type AuthHandler struct {
-	userRepository UserFinder
-	tokenManager   *security.TokenManager
+	authService *application.AuthService
 }
 
-// NewAuthHandler cria um AuthHandler que confere as credenciais em userRepository e emite tokens com tokenManager.
-func NewAuthHandler(userRepository UserFinder, tokenManager *security.TokenManager) *AuthHandler {
-	return &AuthHandler{userRepository: userRepository, tokenManager: tokenManager}
+// NewAuthHandler cria um AuthHandler que faz o login com authService.
+func NewAuthHandler(authService *application.AuthService) *AuthHandler {
+	return &AuthHandler{authService: authService}
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
@@ -52,32 +43,9 @@ func (authHandler *AuthHandler) Login(responseWriter http.ResponseWriter, reques
 		return
 	}
 
-	if input.Email == "" || input.Password == "" {
-		writeError(responseWriter, http.StatusBadRequest, "email or password is empty")
-		return
-	}
-
-	user, err := authHandler.userRepository.FindByEmail(input.Email)
+	token, err := authHandler.authService.Login(input.Email, input.Password)
 	if err != nil {
-		if errors.Is(err, domain.ErrUserNotFound) {
-			security.SpendPasswordCheck(input.Password)
-			writeError(responseWriter, http.StatusUnauthorized, "invalid credentials")
-			return
-		}
-		log.Println("find user by email:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
-		return
-	}
-
-	if !security.CheckPassword(user.Password, input.Password) {
-		writeError(responseWriter, http.StatusUnauthorized, "invalid credentials")
-		return
-	}
-
-	token, err := authHandler.tokenManager.Issue(user.ID, user.Role)
-	if err != nil {
-		log.Println("issue token:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		writeServiceError(responseWriter, "login", err)
 		return
 	}
 

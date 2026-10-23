@@ -2,29 +2,20 @@ package rest
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 
+	"go-lang/internal/application"
 	"go-lang/internal/domain"
 )
 
-// BookStore é o acesso a livros de que o BookHandler precisa. O *postgres.BookRepository a satisfaz.
-type BookStore interface {
-	Create(book *domain.Book) error
-	List() ([]domain.Book, error)
-	Update(book *domain.Book) error
-	Delete(bookID string) (*domain.Book, error)
-}
-
 // BookHandler atende as rotas HTTP de livros.
 type BookHandler struct {
-	bookRepository BookStore
+	bookService *application.BookService
 }
 
-// NewBookHandler cria um BookHandler que usa bookRepository.
-func NewBookHandler(bookRepository BookStore) *BookHandler {
-	return &BookHandler{bookRepository: bookRepository}
+// NewBookHandler cria um BookHandler que usa bookService.
+func NewBookHandler(bookService *application.BookService) *BookHandler {
+	return &BookHandler{bookService: bookService}
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
@@ -46,15 +37,9 @@ func (bookHandler *BookHandler) Create(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	if book.Title == "" || book.Author == "" {
-		writeError(responseWriter, http.StatusBadRequest, "book title or author is empty")
-		return
-	}
-
-	err = bookHandler.bookRepository.Create(&book)
+	err = bookHandler.bookService.Create(&book)
 	if err != nil {
-		log.Println("create book:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		writeServiceError(responseWriter, "create book", err)
 		return
 	}
 
@@ -63,10 +48,9 @@ func (bookHandler *BookHandler) Create(responseWriter http.ResponseWriter, reque
 
 // List trata GET /books.
 func (bookHandler *BookHandler) List(responseWriter http.ResponseWriter, _ *http.Request) {
-	books, err := bookHandler.bookRepository.List()
+	books, err := bookHandler.bookService.List()
 	if err != nil {
-		log.Println("list books:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		writeServiceError(responseWriter, "list books", err)
 		return
 	}
 
@@ -83,25 +67,11 @@ func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	if book.Title == "" || book.Author == "" {
-		writeError(responseWriter, http.StatusBadRequest, "book title or author is empty")
-		return
-	}
-
 	book.ID = request.PathValue("id")
 
-	err = bookHandler.bookRepository.Update(&book)
+	err = bookHandler.bookService.Update(&book)
 	if err != nil {
-		if errors.Is(err, domain.ErrBookNotFound) {
-			writeError(responseWriter, http.StatusNotFound, "book not found")
-			return
-		}
-		if errors.Is(err, domain.ErrInvalidBookID) {
-			writeError(responseWriter, http.StatusBadRequest, "invalid book id")
-			return
-		}
-		log.Println("update book:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		writeServiceError(responseWriter, "update book", err)
 		return
 	}
 
@@ -110,18 +80,9 @@ func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, reque
 
 // Delete trata DELETE /books/{id}.
 func (bookHandler *BookHandler) Delete(responseWriter http.ResponseWriter, request *http.Request) {
-	book, err := bookHandler.bookRepository.Delete(request.PathValue("id"))
+	book, err := bookHandler.bookService.Delete(request.PathValue("id"))
 	if err != nil {
-		if errors.Is(err, domain.ErrBookNotFound) {
-			writeError(responseWriter, http.StatusNotFound, "book not found")
-			return
-		}
-		if errors.Is(err, domain.ErrInvalidBookID) {
-			writeError(responseWriter, http.StatusBadRequest, "invalid book id")
-			return
-		}
-		log.Println("delete book:", err)
-		writeError(responseWriter, http.StatusInternalServerError, "internal server error")
+		writeServiceError(responseWriter, "delete book", err)
 		return
 	}
 

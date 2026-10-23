@@ -20,7 +20,7 @@ Pendências do projeto, na ordem sugerida. Marque com `[x]` quando terminar.
 
 ## 🟢 3. Projeto e ferramentas
 
-- [x] **Testes.** Não existe nenhum `*_test.go`. Feito: rest (com `httptest`) e `security` rodam sempre; os testes de `postgres` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
+- [x] **Testes.** Não existe nenhum `*_test.go`. Feito: domain, application, rest (com `httptest`) e security rodam sempre; os testes de `postgres` só rodam com `TEST_DATABASE_URL` definida (Postgres com as migrations aplicadas).
 - [x] **README** com: subir o banco (`docker compose -f deployment/docker-compose.yml --env-file .env up -d db`), rodar migrations (`docker compose -f deployment/docker-compose.yml --env-file .env run --rm migrate up`), copiar o `.env.example`, rodar (`go run ./cmd/api`) e a lista de endpoints.
 - [x] **CI no GitHub Actions** rodando `go build ./...`, `golangci-lint fmt --diff ./...` e `golangci-lint run ./...` a cada push.
 - [x] **Arquivo `.http`** no repositório documentando as rotas (criar, listar, atualizar, apagar) para testar pelo GoLand.

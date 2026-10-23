@@ -52,7 +52,7 @@ func TestCreateUserStoresHashAndHidesPassword(t *testing.T) {
 	if created.Password == "Senha-longa-1" {
 		t.Fatal("a senha foi gravada em texto puro")
 	}
-	if !security.CheckPassword(created.Password, "Senha-longa-1") {
+	if !security.NewPasswordHasher().Verify(created.Password, "Senha-longa-1") {
 		t.Error("o hash gravado não corresponde à senha enviada")
 	}
 }
@@ -129,7 +129,7 @@ func TestUpdateUserKeepsRole(t *testing.T) {
 	if stored.Role != domain.RoleUser {
 		t.Errorf("role gravada = %q, want %q", stored.Role, domain.RoleUser)
 	}
-	if !security.CheckPassword(stored.Password, "Nova-senha-1") {
+	if !security.NewPasswordHasher().Verify(stored.Password, "Nova-senha-1") {
 		t.Error("a nova senha não foi gravada como hash")
 	}
 }
@@ -162,7 +162,7 @@ func TestPatchUser(t *testing.T) {
 		assertStatus(t, recorder, http.StatusOK)
 
 		stored := app.users.users[app.memberID]
-		if stored.Password == "Outra-senha-1" || !security.CheckPassword(stored.Password, "Outra-senha-1") {
+		if stored.Password == "Outra-senha-1" || !security.NewPasswordHasher().Verify(stored.Password, "Outra-senha-1") {
 			t.Error("a senha não foi gravada como hash bcrypt")
 		}
 	})
