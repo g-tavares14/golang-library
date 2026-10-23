@@ -60,6 +60,26 @@ func (userRepository *UserRepository) Create(user *models.User) error {
 	return translateUserError(err)
 }
 
+// CreateIfEmailMissing insere o usuário, a menos que o e-mail já esteja em uso.
+// Devolve true quando criou e false quando o e-mail já existia, sem alterar o registro existente.
+func (userRepository *UserRepository) CreateIfEmailMissing(user *models.User) (bool, error) {
+	err := userRepository.db.QueryRow(
+		`INSERT INTO users (name, email, password, role)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (email) DO NOTHING
+		 RETURNING id, created_at`,
+		user.Name, user.Email, user.Password, user.Role,
+	).Scan(&user.ID, &user.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // List devolve todos os usuários, do mais novo para o mais antigo.
 func (userRepository *UserRepository) List() ([]models.User, error) {
 	rows, err := userRepository.db.Query(

@@ -40,6 +40,10 @@ func run() error {
 
 	bookRepository := repository.NewBookRepository(database)
 	userRepository := repository.NewUserRepository(database)
+	if err := seedAdmin(userRepository); err != nil {
+		return err
+	}
+
 	tokenManager := auth.NewTokenManager(config.JWTSecret(), tokenTTL)
 
 	bookHandler := handlers.NewBookHandler(bookRepository)

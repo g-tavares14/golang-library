@@ -7,13 +7,8 @@ import (
 	"net/http"
 
 	"go-lang/auth"
+	"go-lang/models"
 	"go-lang/repository"
-)
-
-// Papéis aceitos para um usuário.
-const (
-	roleUser  = "user"
-	roleAdmin = "admin"
 )
 
 // UserHandler atende as rotas HTTP de usuários.
@@ -52,7 +47,7 @@ func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, reque
 	}
 
 	// O cadastro é público: o papel é decidido pelo servidor, nunca pelo cliente.
-	user.Role = roleUser
+	user.Role = models.RoleUser
 
 	passwordHash, err := auth.HashPassword(user.Password)
 	if err != nil {
@@ -114,7 +109,7 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	if user.Role != roleAdmin {
+	if user.Role != models.RoleAdmin {
 		writeError(responseWriter, http.StatusForbidden, "only admin can update users")
 		return
 	}
