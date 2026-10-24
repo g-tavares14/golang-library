@@ -29,6 +29,7 @@ var statusByError = []struct {
 	{domain.ErrBookNotFound, http.StatusNotFound},
 	{domain.ErrEmailAlreadyExists, http.StatusConflict},
 	{domain.ErrUserNameTooLong, http.StatusBadRequest},
+	{domain.ErrBookFieldTooLong, http.StatusBadRequest},
 }
 
 // writeServiceError traduz o erro de um caso de uso em resposta HTTP.

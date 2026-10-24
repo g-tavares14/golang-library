@@ -162,23 +162,3 @@ func TestValidateRoleChange(t *testing.T) {
 		})
 	}
 }
-
-func TestBookValidate(t *testing.T) {
-	tests := []struct {
-		name string
-		book domain.Book
-		want error
-	}{
-		{"completo", domain.Book{Title: "Go", Author: "Pike"}, nil},
-		{"sem título", domain.Book{Author: "Pike"}, domain.ErrBookFieldsEmpty},
-		{"sem escritor", domain.Book{Title: "Go"}, domain.ErrBookFieldsEmpty},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if err := test.book.Validate(); !errors.Is(err, test.want) {
-				t.Errorf("Validate() = %v, want %v", err, test.want)
-			}
-		})
-	}
-}

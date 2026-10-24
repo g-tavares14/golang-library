@@ -42,4 +42,7 @@ var (
 	// ErrUserNameTooLong é devolvido quando o nome do usuário é muito longo.
 	// O limite é definido pela coluna de nome do usuário no banco de dados (VARCHAR 100).
 	ErrUserNameTooLong = errors.New("user name is too long")
+	// ErrBookFieldTooLong é devolvido quando qualquer campo do livro é muito longo.
+	// O limite é definido no banco de dados (VARCHAR 255).
+	ErrBookFieldTooLong = errors.New("book field is too long")
 )

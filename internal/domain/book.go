@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"time"
+	"unicode/utf8"
+)
 
 // Book é um livro do acervo.
 type Book struct {
@@ -23,10 +26,22 @@ type BookRepository interface {
 	Delete(bookID string) (*Book, error)
 }
 
-// Validate confere se o livro tem título e escritor.
+// maxBookFieldLength é o tamanho máximo aceito para qualquer campo do livro, em caracteres UTF-8.
+const maxBookFieldLength = 255
+
+// Validate confere se o livro tem título e escritor e se título, escritor e descrição
+// cabem nas colunas do banco.
 func (book *Book) Validate() error {
 	if book.Title == "" || book.Author == "" {
 		return ErrBookFieldsEmpty
+	}
+
+	if utf8.RuneCountInString(book.Title) > maxBookFieldLength || utf8.RuneCountInString(book.Author) > maxBookFieldLength {
+		return ErrBookFieldTooLong
+	}
+
+	if book.Description != nil && utf8.RuneCountInString(*book.Description) > maxBookFieldLength {
+		return ErrBookFieldTooLong
 	}
 
 	return nil
