@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"go-lang/internal/application"
@@ -32,9 +31,7 @@ func (userHandler *UserHandler) RegisterRoutes(serveMux *http.ServeMux, guard *G
 func (userHandler *UserHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
 	var input userInput
 
-	err := json.NewDecoder(request.Body).Decode(&input)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &input) {
 		return
 	}
 
@@ -67,9 +64,7 @@ func (userHandler *UserHandler) List(responseWriter http.ResponseWriter, _ *http
 func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
 	var input userInput
 
-	err := json.NewDecoder(request.Body).Decode(&input)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &input) {
 		return
 	}
 
@@ -86,9 +81,7 @@ func (userHandler *UserHandler) Update(responseWriter http.ResponseWriter, reque
 func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, request *http.Request) {
 	var input userPatchInput
 
-	err := json.NewDecoder(request.Body).Decode(&input)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &input) {
 		return
 	}
 
@@ -105,9 +98,7 @@ func (userHandler *UserHandler) Patch(responseWriter http.ResponseWriter, reques
 func (userHandler *UserHandler) UpdateRole(responseWriter http.ResponseWriter, request *http.Request) {
 	var input roleInput
 
-	err := json.NewDecoder(request.Body).Decode(&input)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &input) {
 		return
 	}
 

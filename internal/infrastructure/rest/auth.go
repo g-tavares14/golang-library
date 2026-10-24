@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"go-lang/internal/application"
@@ -37,9 +36,7 @@ type loginResponse struct {
 func (authHandler *AuthHandler) Login(responseWriter http.ResponseWriter, request *http.Request) {
 	var input loginInput
 
-	err := json.NewDecoder(request.Body).Decode(&input)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &input) {
 		return
 	}
 

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"go-lang/internal/application"
@@ -31,14 +30,11 @@ func (bookHandler *BookHandler) RegisterRoutes(serveMux *http.ServeMux, guard *G
 func (bookHandler *BookHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
 	var book domain.Book
 
-	err := json.NewDecoder(request.Body).Decode(&book)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &book) {
 		return
 	}
 
-	err = bookHandler.bookService.Create(&book)
-	if err != nil {
+	if err := bookHandler.bookService.Create(&book); err != nil {
 		writeServiceError(responseWriter, "create book", err)
 		return
 	}
@@ -61,16 +57,13 @@ func (bookHandler *BookHandler) List(responseWriter http.ResponseWriter, _ *http
 func (bookHandler *BookHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
 	var book domain.Book
 
-	err := json.NewDecoder(request.Body).Decode(&book)
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, err.Error())
+	if !decodeJSON(responseWriter, request, &book) {
 		return
 	}
 
 	book.ID = request.PathValue("id")
 
-	err = bookHandler.bookService.Update(&book)
-	if err != nil {
+	if err := bookHandler.bookService.Update(&book); err != nil {
 		writeServiceError(responseWriter, "update book", err)
 		return
 	}
