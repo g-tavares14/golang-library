@@ -10,11 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"go-lang/internal/application"
+	"go-lang/internal/bootstrap"
 	"go-lang/internal/infrastructure/config"
-	"go-lang/internal/infrastructure/postgres"
-	"go-lang/internal/infrastructure/rest"
-	"go-lang/internal/infrastructure/security"
 )
 
 const (
@@ -39,35 +36,15 @@ func run() error {
 		}
 	}()
 
-	// Infraestrutura: acesso ao banco, hash de senha e tokens.
-	bookRepository := postgres.NewBookRepository(database)
-	userRepository := postgres.NewUserRepository(database)
-	passwordHasher := security.NewPasswordHasher()
-	tokenManager := security.NewTokenManager(config.JWTSecret(), tokenTTL)
+	app := bootstrap.New(database, config.JWTSecret(), tokenTTL)
 
-	// Casos de uso.
-	bookService := application.NewBookService(bookRepository)
-	userService := application.NewUserService(userRepository, passwordHasher)
-	authService := application.NewAuthService(userRepository, passwordHasher, tokenManager)
-
-	if err := seedAdmin(userService); err != nil {
+	if err := seedAdmin(app.Users); err != nil {
 		return err
 	}
 
-	// Camada HTTP.
-	bookHandler := rest.NewBookHandler(bookService)
-	userHandler := rest.NewUserHandler(userService)
-	authHandler := rest.NewAuthHandler(authService)
-	guard := rest.NewGuard(tokenManager)
-
-	serveMux := http.NewServeMux()
-	bookHandler.RegisterRoutes(serveMux, guard)
-	userHandler.RegisterRoutes(serveMux, guard)
-	authHandler.RegisterRoutes(serveMux)
-
 	server := &http.Server{
 		Addr:              ":8080",
-		Handler:           serveMux,
+		Handler:           app.Handler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
