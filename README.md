@@ -58,8 +58,9 @@ Os erros vêm como `{"error": "..."}`. Exemplos prontos de cada requisição est
 ## Estrutura do projeto
 
 ```text
-cmd/api/                       ponto de entrada: monta as peças e sobe o servidor
+cmd/api/                       ponto de entrada: lê o .env, cria o admin inicial e sobe o servidor
 internal/
+  bootstrap/                   raiz de composição: liga infraestrutura, casos de uso e rotas
   domain/                      entidades, regras de negócio, erros e interfaces dos repositórios
   application/                 casos de uso (services) que orquestram as regras do domain
   infrastructure/
@@ -67,6 +68,8 @@ internal/
     postgres/                  repositórios com database/sql e tradução dos erros do Postgres
     security/                  bcrypt e tokens JWT
     config/                    leitura do .env e conexão com o banco
+  testutil/                    apoio aos testes de integração (conexão com o banco de teste)
+test/e2e/                      testes ponta a ponta: as rotas reais sobre um Postgres, por HTTP
 deployment/                    docker-compose.yml (Postgres e migrations)
 migrations/                    migrations do Goose
 ```
@@ -82,10 +85,19 @@ golangci-lint run ./...          # lint
 go test ./...                    # domain, application, rest e security rodam sempre
 ```
 
-Os testes de `postgres` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:
+Os testes de `internal/infrastructure/postgres` e `test/e2e` precisam de um Postgres com as migrations aplicadas e ficam pulados sem `TEST_DATABASE_URL`. Use um banco de testes, não o de desenvolvimento:
 
 ```bash
-TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" go test ./internal/infrastructure/postgres/
+# 1. cria o banco de testes e aplica as migrations (com o Compose no ar)
+docker compose -f deployment/docker-compose.yml --env-file .env exec db psql -U postgres -d golang -c "CREATE DATABASE golang_test"
+go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir migrations postgres "host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" up
+
+# 2. roda tudo, inclusive os testes de banco
+TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang_test sslmode=disable" go test ./...
 ```
 
-A CI (`.github/workflows/ci.yml`) roda build, formatação, lint e testes a cada push.
+Os testes criam dados com e-mails e títulos únicos e apagam o que criaram, mas nunca aponte `TEST_DATABASE_URL` para um banco com dados que importam.
+
+## CI
+
+O workflow `.github/workflows/ci.yml` roda a cada push: build, formatação, lint, as migrations num Postgres 17 descartável e `go test ./...` com `TEST_DATABASE_URL` apontando para ele. Na CI (`CI=true`), um teste de banco sem `TEST_DATABASE_URL` falha em vez de ser pulado, para os testes de banco não "passarem" sem rodar.
