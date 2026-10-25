@@ -4,40 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq" // driver do PostgreSQL para o database/sql
-
 	"go-lang/internal/domain"
 	"go-lang/internal/infrastructure/postgres"
+	"go-lang/internal/testutil"
 )
-
-// openTestDB conecta ao Postgres indicado em TEST_DATABASE_URL, que precisa ter as migrations aplicadas.
-// Sem a variável, o teste é pulado. Exemplo:
-//
-//	TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=... dbname=golang sslmode=disable" go test ./internal/infrastructure/postgres/
-func openTestDB(t *testing.T) *sql.DB {
-	t.Helper()
-
-	connectionString := os.Getenv("TEST_DATABASE_URL")
-	if connectionString == "" {
-		t.Skip("TEST_DATABASE_URL não definida; pulando teste de integração com o Postgres")
-	}
-
-	database, err := sql.Open("postgres", connectionString)
-	if err != nil {
-		t.Fatalf("open database: %v", err)
-	}
-	t.Cleanup(func() { _ = database.Close() })
-
-	if err := database.Ping(); err != nil {
-		t.Fatalf("ping database: %v", err)
-	}
-
-	return database
-}
 
 // uniqueEmail gera um e-mail que não colide com outros testes nem com execuções anteriores.
 func uniqueEmail(prefix string) string {
@@ -58,7 +31,7 @@ func newTestUser(t *testing.T, database *sql.DB, role string) *domain.User {
 }
 
 func TestUserCreateAndFindByEmail(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 
 	created := newTestUser(t, database, domain.RoleUser)
@@ -81,7 +54,7 @@ func TestUserCreateAndFindByEmail(t *testing.T) {
 }
 
 func TestUserCreateDuplicateEmail(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	existing := newTestUser(t, database, domain.RoleUser)
 
 	duplicate := &domain.User{Name: "Outro", Email: existing.Email, Password: "hash", Role: domain.RoleUser}
@@ -92,7 +65,7 @@ func TestUserCreateDuplicateEmail(t *testing.T) {
 }
 
 func TestUserCreateIfEmailMissing(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 
 	admin := &domain.User{Name: "Admin", Email: uniqueEmail("seed"), Password: "hash", Role: domain.RoleAdmin}
@@ -119,7 +92,7 @@ func TestUserCreateIfEmailMissing(t *testing.T) {
 }
 
 func TestUserUpdateKeepsRole(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleAdmin)
 
@@ -142,7 +115,7 @@ func TestUserUpdateKeepsRole(t *testing.T) {
 }
 
 func TestUserUpdateErrors(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 
 	missing := &domain.User{ID: "00000000-0000-0000-0000-000000000000", Name: "X", Email: uniqueEmail("x"), Password: "h"}
@@ -164,7 +137,7 @@ func TestUserUpdateErrors(t *testing.T) {
 }
 
 func TestUserPatchChangesOnlySentFields(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
@@ -192,7 +165,7 @@ func TestUserPatchChangesOnlySentFields(t *testing.T) {
 }
 
 func TestUserUpdateRole(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
@@ -216,7 +189,7 @@ func TestUserUpdateRole(t *testing.T) {
 }
 
 func TestUserListAndDelete(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	userRepository := postgres.NewUserRepository(database)
 	created := newTestUser(t, database, domain.RoleUser)
 
@@ -251,7 +224,7 @@ func TestUserListAndDelete(t *testing.T) {
 }
 
 func TestBookLifecycle(t *testing.T) {
-	database := openTestDB(t)
+	database := testutil.OpenTestDB(t)
 	bookRepository := postgres.NewBookRepository(database)
 
 	description := "Clássico"
