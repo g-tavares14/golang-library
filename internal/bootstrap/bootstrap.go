@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go-lang/internal/application"
 	"go-lang/internal/infrastructure/postgres"
 	"go-lang/internal/infrastructure/rest"
@@ -21,13 +23,28 @@ type App struct {
 	Users *application.UserService
 }
 
-// New monta a aplicação sobre database. Os tokens são assinados com jwtSecret e valem por tokenTTL.
-func New(database *sql.DB, jwtSecret []byte, tokenTTL time.Duration) *App {
+// loginLimiterIdleTTL é por quanto tempo o limitador do login lembra de um IP que parou de tentar.
+const loginLimiterIdleTTL = 10 * time.Minute
+
+// Config reúne os ajustes que variam entre o servidor real e os testes.
+type Config struct {
+	// JWTSecret assina os tokens de acesso.
+	JWTSecret []byte
+	// TokenTTL é por quanto tempo um token emitido no login continua válido.
+	TokenTTL time.Duration
+	// LoginRate é o ritmo em que cada IP recupera uma tentativa de login.
+	LoginRate rate.Limit
+	// LoginBurst é quantas tentativas de login seguidas um IP pode fazer. Precisa ser pelo menos 1.
+	LoginBurst int
+}
+
+// New monta a aplicação sobre database, com os ajustes de config.
+func New(database *sql.DB, config Config) *App {
 	// Infraestrutura: acesso ao banco, hash de senha e tokens.
 	bookRepository := postgres.NewBookRepository(database)
 	userRepository := postgres.NewUserRepository(database)
 	passwordHasher := security.NewPasswordHasher()
-	tokenManager := security.NewTokenManager(jwtSecret, tokenTTL)
+	tokenManager := security.NewTokenManager(config.JWTSecret, config.TokenTTL)
 
 	// Casos de uso.
 	bookService := application.NewBookService(bookRepository)
@@ -39,11 +56,12 @@ func New(database *sql.DB, jwtSecret []byte, tokenTTL time.Duration) *App {
 	userHandler := rest.NewUserHandler(userService)
 	authHandler := rest.NewAuthHandler(authService)
 	guard := rest.NewGuard(tokenManager)
+	loginLimiter := rest.NewRateLimiter(config.LoginRate, config.LoginBurst, loginLimiterIdleTTL)
 
 	serveMux := http.NewServeMux()
 	bookHandler.RegisterRoutes(serveMux, guard)
 	userHandler.RegisterRoutes(serveMux, guard)
-	authHandler.RegisterRoutes(serveMux)
+	authHandler.RegisterRoutes(serveMux, loginLimiter)
 
 	return &App{Handler: serveMux, Users: userService}
 }

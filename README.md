@@ -33,6 +33,8 @@ go run ./cmd/api
 1. `POST /login` com e-mail e senha devolve `{"token": "..."}` (válido por 1 hora).
 2. Envie o token nas demais rotas: `Authorization: Bearer <token>`.
 
+O `POST /login` tem limite de tentativas por IP, contra força bruta: 5 seguidas, e depois uma nova a cada 12 segundos. Acima disso a resposta é `429` com o cabeçalho `Retry-After` (em segundos). Toda tentativa conta, certa ou errada, e os cabeçalhos `X-Forwarded-For` e `X-Real-IP` são ignorados porque qualquer cliente pode forjá-los.
+
 O papel (`user` ou `admin`) vem do token assinado, nunca do corpo da requisição. O cadastro público sempre cria `user`; só um admin promove alguém, em `PUT /users/{id}/role`.
 
 ## Endpoints

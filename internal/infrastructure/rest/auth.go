@@ -17,8 +17,9 @@ func NewAuthHandler(authService *application.AuthService) *AuthHandler {
 }
 
 // RegisterRoutes liga cada rota (método + caminho) ao seu handler.
-func (authHandler *AuthHandler) RegisterRoutes(serveMux *http.ServeMux) {
-	serveMux.HandleFunc("POST /login", authHandler.Login)
+// O login passa por loginLimiter, que barra tentativas em excesso de um mesmo IP (força bruta).
+func (authHandler *AuthHandler) RegisterRoutes(serveMux *http.ServeMux, loginLimiter *RateLimiter) {
+	serveMux.HandleFunc("POST /login", loginLimiter.Limit(authHandler.Login))
 }
 
 // loginInput é o corpo JSON aceito em POST /login.

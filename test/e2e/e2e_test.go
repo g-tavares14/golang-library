@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go-lang/internal/bootstrap"
 	"go-lang/internal/testutil"
 )
@@ -91,7 +93,13 @@ func TestAPIEndToEnd(t *testing.T) {
 		_, _ = database.Exec(`DELETE FROM books WHERE title LIKE $1`, prefix+"%")
 	})
 
-	app := bootstrap.New(database, []byte(testSecret), time.Hour)
+	// Limite folgado: o teste faz vários logins seguidos do mesmo endereço.
+	app := bootstrap.New(database, bootstrap.Config{
+		JWTSecret:  []byte(testSecret),
+		TokenTTL:   time.Hour,
+		LoginRate:  rate.Limit(1000),
+		LoginBurst: 1000,
+	})
 	server := httptest.NewServer(app.Handler)
 	t.Cleanup(server.Close)
 

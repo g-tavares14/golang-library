@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go-lang/internal/bootstrap"
 	"go-lang/internal/infrastructure/config"
 )
@@ -19,6 +21,10 @@ const (
 	shutdownTimeout = 10 * time.Second
 	// tokenTTL é por quanto tempo um token emitido no login continua válido.
 	tokenTTL = time.Hour
+	// loginBurst é quantas tentativas de login seguidas um IP pode fazer antes de receber 429.
+	loginBurst = 5
+	// loginRefillInterval é o intervalo em que um IP recupera uma tentativa de login.
+	loginRefillInterval = 12 * time.Second
 )
 
 func main() {
@@ -36,7 +42,12 @@ func run() error {
 		}
 	}()
 
-	app := bootstrap.New(database, config.JWTSecret(), tokenTTL)
+	app := bootstrap.New(database, bootstrap.Config{
+		JWTSecret:  config.JWTSecret(),
+		TokenTTL:   tokenTTL,
+		LoginRate:  rate.Every(loginRefillInterval),
+		LoginBurst: loginBurst,
+	})
 
 	if err := seedAdmin(app.Users); err != nil {
 		return err

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go-lang/internal/application"
 	"go-lang/internal/domain"
 	"go-lang/internal/infrastructure/rest"
@@ -193,7 +195,15 @@ type testApp struct {
 }
 
 // newTestApp monta as rotas reais com stores em memória, um admin e um usuário comum.
+// O limite de tentativas do login é folgado, para os testes que fazem vários logins não receberem 429.
 func newTestApp(t *testing.T) *testApp {
+	t.Helper()
+
+	return newTestAppWithLoginLimiter(t, rest.NewRateLimiter(rate.Limit(1000), 1000, time.Minute))
+}
+
+// newTestAppWithLoginLimiter é o newTestApp com um limitador de login escolhido pelo teste.
+func newTestAppWithLoginLimiter(t *testing.T, loginLimiter *rest.RateLimiter) *testApp {
 	t.Helper()
 
 	app := &testApp{
@@ -218,7 +228,7 @@ func newTestApp(t *testing.T) *testApp {
 	guard := rest.NewGuard(app.tokenManager)
 	rest.NewBookHandler(application.NewBookService(app.books)).RegisterRoutes(app.mux, guard)
 	rest.NewUserHandler(application.NewUserService(app.users, passwordHasher)).RegisterRoutes(app.mux, guard)
-	rest.NewAuthHandler(application.NewAuthService(app.users, passwordHasher, app.tokenManager)).RegisterRoutes(app.mux)
+	rest.NewAuthHandler(application.NewAuthService(app.users, passwordHasher, app.tokenManager)).RegisterRoutes(app.mux, loginLimiter)
 
 	return app
 }

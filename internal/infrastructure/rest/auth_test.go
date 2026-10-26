@@ -3,8 +3,12 @@ package rest_test
 import (
 	"net/http"
 	"testing"
+	"time"
+
+	"golang.org/x/time/rate"
 
 	"go-lang/internal/domain"
+	"go-lang/internal/infrastructure/rest"
 )
 
 func TestLoginSuccess(t *testing.T) {
@@ -61,4 +65,27 @@ func TestLoginErrorDoesNotRevealWhichEmailsExist(t *testing.T) {
 		t.Errorf("mensagens diferentes revelam quais e-mails existem:\n%q\n%q",
 			wrongPassword.Body.String(), unknownEmail.Body.String())
 	}
+}
+
+func TestLoginIsRateLimitedPerIP(t *testing.T) {
+	const burst = 3
+	limiter := rest.NewRateLimiter(rate.Every(time.Hour), burst, time.Minute)
+	app := newTestAppWithLoginLimiter(t, limiter)
+
+	wrongPassword := `{"email":"admin@example.com","password":"errada"}`
+	for attempt := 1; attempt <= burst; attempt++ {
+		assertStatus(t, app.do("POST", "/login", "", wrongPassword), http.StatusUnauthorized)
+	}
+
+	// Esgotado o balde, até a senha certa é barrada: o limite vale para qualquer tentativa.
+	recorder := app.do("POST", "/login", "", `{"email":"admin@example.com","password":"senha-do-teste"}`)
+	assertStatus(t, recorder, http.StatusTooManyRequests)
+	if recorder.Header().Get("Retry-After") == "" {
+		t.Error("o 429 precisa trazer o cabeçalho Retry-After")
+	}
+
+	// Só o login é limitado: as outras rotas seguem normais.
+	assertStatus(t, app.do("GET", "/books", app.memberToken, ""), http.StatusOK)
+	assertStatus(t, app.do("POST", "/users", "",
+		`{"name":"Ana","email":"ana@example.com","password":"Senha-longa-1"}`), http.StatusCreated)
 }
